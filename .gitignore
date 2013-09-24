@@ -1,0 +1,6 @@
+# folders
+tmp/
+build/
+# other files
+*~
+
