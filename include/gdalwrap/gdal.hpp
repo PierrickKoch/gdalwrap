@@ -81,8 +81,7 @@ public:
     }
 
     size_t index_custom(double x, double y) const {
-        return std::ceil( (x - custom_x_origin) / get_scale_x() +
-                          (y - custom_y_origin) / get_scale_y() * width );
+        return index_utm(x + custom_x_origin, y + custom_y_origin);
     }
 
     size_t index_utm(double x, double y) const {
