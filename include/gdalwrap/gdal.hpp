@@ -76,8 +76,8 @@ public:
     }
 
     size_t index_raster(double x, double y) const {
-        return std::ceil( x / get_scale_x() +
-                          y / get_scale_y() * width );
+        return std::ceil( x / std::abs(get_scale_x()) +
+                          y / std::abs(get_scale_y()) * width );
     }
 
     size_t index_custom(double x, double y) const {
@@ -166,12 +166,18 @@ public:
         return height;
     }
 
+    /** X scale
+     * can be negative if origin is right instead of left.
+     */
     double get_scale_x() const {
-        return std::abs(transform[1]); // pixel width
+        return transform[1]; // pixel width
     }
 
+    /** Y scale
+     * can be negative if origin is bottom instead of top.
+     */
     double get_scale_y() const {
-        return std::abs(transform[5]); // pixel height
+        return transform[5]; // pixel height
     }
 
     double get_utm_pose_x() const {
