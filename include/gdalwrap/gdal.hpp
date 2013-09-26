@@ -22,6 +22,7 @@ namespace gdalwrap {
 
 typedef std::vector<float>  raster;
 typedef std::vector<raster> rasters;
+typedef std::array<double, 2> point_xy_t;
 
 /*
  * gdal : GDALDataset wrapper
@@ -87,6 +88,30 @@ public:
     size_t index_utm(double x, double y) const {
         return std::ceil( (x - get_utm_pose_x()) / get_scale_x() +
                           (y - get_utm_pose_y()) / get_scale_y() * width );
+    }
+
+    point_xy_t point_pix2utm(double x, double y) {
+        point_xy_t p = {x * get_scale_x() + get_utm_pose_x() ,
+                        y * get_scale_y() + get_utm_pose_y()};
+        return p;
+    }
+
+    point_xy_t point_utm2pix(double x, double y) {
+        point_xy_t p = {(x - get_utm_pose_x()) / get_scale_x(),
+                        (y - get_utm_pose_y()) / get_scale_y()};
+        return p;
+    }
+
+    point_xy_t point_pix2custom(double x, double y) {
+        point_xy_t p = point_pix2utm(x, y);
+        p[0] -= get_custom_x_origin();
+        p[1] -= get_custom_y_origin();
+        return p;
+    }
+
+    point_xy_t point_custom2pix(double x, double y) {
+        return point_utm2pix( x + get_custom_x_origin(),
+                              y + get_custom_y_origin() );
     }
 
     /** Copy meta-data from another instance
