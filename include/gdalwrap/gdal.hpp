@@ -71,6 +71,10 @@ public:
         load(filepath);
     }
 
+    /** Custom origin (UTM)
+     *
+     * Store an UTM point in the meta-data.
+     */
     void set_custom_origin(double x, double y) {
         custom_x_origin = x;
         custom_y_origin = y;
@@ -90,28 +94,40 @@ public:
                           (y - get_utm_pose_y()) / get_scale_y() * width );
     }
 
-    point_xy_t point_pix2utm(double x, double y) {
+    point_xy_t point_pix2utm(double x, double y) const {
         point_xy_t p = {x * get_scale_x() + get_utm_pose_x() ,
                         y * get_scale_y() + get_utm_pose_y()};
         return p;
     }
 
-    point_xy_t point_utm2pix(double x, double y) {
+    point_xy_t point_utm2pix(double x, double y) const {
         point_xy_t p = {(x - get_utm_pose_x()) / get_scale_x(),
                         (y - get_utm_pose_y()) / get_scale_y()};
         return p;
     }
 
-    point_xy_t point_pix2custom(double x, double y) {
+    point_xy_t point_pix2custom(double x, double y) const {
         point_xy_t p = point_pix2utm(x, y);
         p[0] -= get_custom_x_origin();
         p[1] -= get_custom_y_origin();
         return p;
     }
 
-    point_xy_t point_custom2pix(double x, double y) {
+    point_xy_t point_custom2pix(double x, double y) const {
         return point_utm2pix( x + get_custom_x_origin(),
                               y + get_custom_y_origin() );
+    }
+
+    point_xy_t point_custom2utm(double x, double y) const {
+        point_xy_t p = {x + get_custom_x_origin() ,
+                        y + get_custom_y_origin() };
+        return p;
+    }
+
+    point_xy_t point_utm2custom(double x, double y) const {
+        point_xy_t p = {x - get_custom_x_origin() ,
+                        y - get_custom_y_origin() };
+        return p;
     }
 
     /** Copy meta-data from another instance
