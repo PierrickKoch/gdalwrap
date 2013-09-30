@@ -63,6 +63,8 @@ public:
         utm_zone = x.utm_zone;
         utm_north = x.utm_north;
         transform = x.transform;
+        custom_x_origin = x.custom_x_origin;
+        custom_y_origin = x.custom_y_origin;
         bands = x.bands;
         names = x.names;
     }
@@ -138,6 +140,8 @@ public:
         utm_zone  = copy.utm_zone;
         utm_north = copy.utm_north;
         transform = copy.transform;
+        custom_x_origin = copy.custom_x_origin;
+        custom_y_origin = copy.custom_y_origin;
         names = copy.names;
         set_size(copy.bands.size(), copy.width, copy.height);
     }
@@ -151,6 +155,8 @@ public:
         utm_zone  = copy.utm_zone;
         utm_north = copy.utm_north;
         transform = copy.transform;
+        custom_x_origin = copy.custom_x_origin;
+        custom_y_origin = copy.custom_y_origin;
         set_size(n_raster, copy.width, copy.height);
     }
 
