@@ -82,18 +82,22 @@ public:
         custom_y_origin = y;
     }
 
-    size_t index_raster(double x, double y) const {
-        return std::ceil( x / std::abs(get_scale_x()) +
-                          y / std::abs(get_scale_y()) * width );
+    size_t index_pix(const point_xy_t& p) const {
+        return index_pix( std::round(p[0]), std::round(p[1]) );
+    }
+
+    size_t index_pix(size_t x, size_t y) const {
+        if ( x > width or y > height ) // size_t can not be < 0
+            throw std::out_of_range("point out of image");
+        return x + y * width;
     }
 
     size_t index_custom(double x, double y) const {
-        return index_utm(x + custom_x_origin, y + custom_y_origin);
+        return index_pix(point_custom2pix(x,y));
     }
 
     size_t index_utm(double x, double y) const {
-        return std::ceil( (x - get_utm_pose_x()) / get_scale_x() +
-                          (y - get_utm_pose_y()) / get_scale_y() * width );
+        return index_pix(point_utm2pix(x,y));
     }
 
     point_xy_t point_pix2utm(double x, double y) const {
