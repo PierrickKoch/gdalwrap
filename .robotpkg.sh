@@ -1,6 +1,6 @@
 #!/bin/sh
 
-__NEW_VER=0.1.2
+__NEW_VER=0.1.3
 
 __PKGNAME=gdalwrap
 __IS_WIP_=wip/
