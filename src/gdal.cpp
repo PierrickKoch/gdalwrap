@@ -121,4 +121,59 @@ void gdal::load(const std::string& filepath) {
     GDALClose( (GDALDatasetH) dataset );
 }
 
+/** Export a band as GIF
+ *
+ * distribute the height using `vfloat2vuchar` method
+ *
+ * @param filepath path to .jpg file.
+ * @param band number [1,n].
+ */
+void gdal::export8u(const std::string& filepath, int band) const {
+    // get the GDAL GeoTIFF driver
+    GDALDriver *driver = GetGDALDriverManager()->GetDriverByName("GTiff");
+    if ( driver == NULL )
+        throw std::runtime_error("[gdal] could not get the driver");
+
+    std::string tmpfilename = std::tmpnam(nullptr);
+    // create the GDAL GeoTiff dataset (n layers of float32)
+    GDALDataset *dataset = driver->Create( tmpfilename.c_str(), width, height,
+        1, GDT_Byte, NULL );
+    if ( dataset == NULL )
+        throw std::runtime_error("[gdal] could not create dataset");
+
+    // set the projection
+    OGRSpatialReference spatial_reference;
+    char *projection = NULL;
+
+    spatial_reference.SetUTM( utm_zone, utm_north );
+    spatial_reference.SetWellKnownGeogCS( "WGS84" );
+    spatial_reference.exportToWkt( &projection );
+    dataset->SetProjection( projection );
+    CPLFree( projection );
+
+    // see GDALDataset::GetGeoTransform()
+    dataset->SetGeoTransform( (double *) transform.data() );
+    dataset->SetMetadataItem("CUSTOM_X_ORIGIN", std::to_string(custom_x_origin).c_str());
+    dataset->SetMetadataItem("CUSTOM_Y_ORIGIN", std::to_string(custom_y_origin).c_str());
+
+    // convert the band from float to byte
+    std::vector<uint8_t> band8u = vfloat2vuchar( bands[band] );
+
+    GDALRasterBand *raster_band = dataset->GetRasterBand(1);
+    raster_band->RasterIO( GF_Write, 0, 0, width, height,
+        (void *) band8u.data(), width, height, GDT_Byte, 0, 0 );
+    raster_band->SetMetadataItem("NAME", names[band].c_str());
+    // save initial min/max
+    auto minmax = std::minmax_element(bands[band].begin(), bands[band].end());
+    raster_band->SetMetadataItem("INITIAL_MIN", std::to_string(*minmax.first).c_str());
+    raster_band->SetMetadataItem("INITIAL_MAX", std::to_string(*minmax.second).c_str());
+
+    driver = GetGDALDriverManager()->GetDriverByName("GIF");
+    driver->CreateCopy( filepath.c_str(), dataset, 0, NULL, NULL, NULL );
+
+    // close properly the dataset
+    GDALClose( (GDALDatasetH) dataset );
+    std::remove( tmpfilename.c_str() );
+}
+
 } // namespace gdalwrap

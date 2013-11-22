@@ -36,6 +36,9 @@ add_subdirectory(src)
 file(GLOB gdalwrap_HDRS "include/gdalwrap/*.hpp")
 install(FILES ${gdalwrap_HDRS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/gdalwrap)
 
+# Testing
+add_subdirectory(test)
+
 #########################################################################
 ### Uninstall ###
 #########################################################################

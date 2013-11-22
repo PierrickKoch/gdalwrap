@@ -283,6 +283,15 @@ public:
      * @param filepath path to .tif file.
      */
     void load(const std::string& filepath);
+
+    /** Export a band as GIF
+     *
+     * distribute the height using `vfloat2vuchar` method bellow
+     *
+     * @param filepath path to .jpg file.
+     * @param band number [1,n].
+     */
+    void export8u(const std::string& filepath, int band) const;
 };
 
 // helpers
