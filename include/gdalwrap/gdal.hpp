@@ -284,14 +284,16 @@ public:
      */
     void load(const std::string& filepath);
 
-    /** Export a band as GIF
+    /** Export a band as Byte
      *
      * distribute the height using `vfloat2vuchar` method bellow
      *
-     * @param filepath path to .jpg file.
+     * @param filepath path to .{jpg,gif} file.
      * @param band number [1,n].
      */
     void export8u(const std::string& filepath, int band) const;
+    void export8u(const std::string& filepath, int band,
+                  const std::string& driver_shortname) const;
 };
 
 // helpers
@@ -335,6 +337,12 @@ inline std::vector<uint8_t> vfloat2vuchar(const std::vector<float>& v) {
         retval[idx] = std::floor( coef * (v[idx] - min) );
 
     return retval;
+}
+
+inline std::string toupper(const std::string& in) {
+    std::string up(in);
+    std::transform(up.begin(), up.end(), up.begin(), std::ptr_fun<int, int>(std::toupper));
+    return up;
 }
 
 } // namespace gdalwrap

@@ -121,14 +121,24 @@ void gdal::load(const std::string& filepath) {
     GDALClose( (GDALDatasetH) dataset );
 }
 
-/** Export a band as GIF
+/** Export a band as Byte
  *
  * distribute the height using `vfloat2vuchar` method
  *
- * @param filepath path to .jpg file.
+ * @param filepath path to .{jpg,gif} file.
  * @param band number [1,n].
  */
 void gdal::export8u(const std::string& filepath, int band) const {
+    std::string ext = toupper( filepath.substr( filepath.rfind(".") + 1 ) );
+
+    if (!ext.compare("JPG"))
+        ext = "JPEG";
+
+    export8u(filepath, band, ext);
+}
+
+void gdal::export8u(const std::string& filepath, int band,
+                    const std::string& driver_shortname) const {
     // get the GDAL GeoTIFF driver
     GDALDriver *driver = GetGDALDriverManager()->GetDriverByName("GTiff");
     if ( driver == NULL )
@@ -168,7 +178,9 @@ void gdal::export8u(const std::string& filepath, int band) const {
     raster_band->SetMetadataItem("INITIAL_MIN", std::to_string(*minmax.first).c_str());
     raster_band->SetMetadataItem("INITIAL_MAX", std::to_string(*minmax.second).c_str());
 
-    driver = GetGDALDriverManager()->GetDriverByName("GIF");
+    driver = GetGDALDriverManager()->GetDriverByName( driver_shortname.c_str() );
+    if ( driver == NULL )
+        throw std::runtime_error("[gdal] could not get the driver: " + driver_shortname);
     driver->CreateCopy( filepath.c_str(), dataset, 0, NULL, NULL, NULL );
 
     // close properly the dataset
