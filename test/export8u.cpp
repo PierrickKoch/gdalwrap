@@ -1,7 +1,7 @@
 #include "gdalwrap/gdal.hpp"
 
 int main(int argc, char * argv[]) {
-    if (argc < 1) {
+    if (argc < 4) {
         std::cerr << "usage: " << argv[0] << " file.tif band file.gif" << std::endl;
         return 1;
     }
