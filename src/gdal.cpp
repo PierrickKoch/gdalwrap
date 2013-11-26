@@ -123,10 +123,11 @@ void gdal::load(const std::string& filepath) {
 
 /** Export a band as Byte
  *
- * distribute the height using `vfloat2vuchar` method
+ * Distribute the height using `vfloat2vuchar` method.
+ * Guess the driver shortname.
  *
- * @param filepath path to .{jpg,gif} file.
- * @param band number [1,n].
+ * @param filepath path to .{jpg,gif,png} file.
+ * @param band number [0,n-1].
  */
 void gdal::export8u(const std::string& filepath, int band) const {
     std::string ext = toupper( filepath.substr( filepath.rfind(".") + 1 ) );
@@ -137,6 +138,17 @@ void gdal::export8u(const std::string& filepath, int band) const {
     export8u(filepath, band, ext);
 }
 
+/** Export a band as Byte
+ *
+ * Distribute the height using `vfloat2vuchar` method.
+ * First create a temporary GeoTiff file with the Byte band,
+ * and then copy it to the `filepath` with the correct driver.
+ * Because `Create` is not supported by all driver, but `CreateCopy` is.
+ *
+ * @param filepath path to .{jpg,gif,png} file.
+ * @param band number [0,n-1].
+ * @param driver_shortname see http://gdal.org/formats_list.html
+ */
 void gdal::export8u(const std::string& filepath, int band,
                     const std::string& driver_shortname) const {
     // get the GDAL GeoTIFF driver
