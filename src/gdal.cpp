@@ -156,9 +156,10 @@ void gdal::export8u(const std::string& filepath, int band,
     if ( driver == NULL )
         throw std::runtime_error("[gdal] could not get the driver");
 
-    std::string tmpfilename = std::tmpnam(nullptr);
+    std::string tmptif = std::tmpnam(nullptr);
+    std::string tmpres = std::tmpnam(nullptr);
     // create the GDAL GeoTiff dataset (n layers of float32)
-    GDALDataset *dataset = driver->Create( tmpfilename.c_str(), width, height,
+    GDALDataset *dataset = driver->Create( tmptif.c_str(), width, height,
         1, GDT_Byte, NULL );
     if ( dataset == NULL )
         throw std::runtime_error("[gdal] could not create dataset");
@@ -193,11 +194,12 @@ void gdal::export8u(const std::string& filepath, int band,
     driver = GetGDALDriverManager()->GetDriverByName( driver_shortname.c_str() );
     if ( driver == NULL )
         throw std::runtime_error("[gdal] could not get the driver: " + driver_shortname);
-    driver->CreateCopy( filepath.c_str(), dataset, 0, NULL, NULL, NULL );
+    driver->CreateCopy( tmpres.c_str(), dataset, 0, NULL, NULL, NULL );
 
     // close properly the dataset
     GDALClose( (GDALDatasetH) dataset );
-    std::remove( tmpfilename.c_str() );
+    std::remove( tmptif.c_str() );
+    std::rename( tmpres.c_str(), filepath.c_str() );
 }
 
 } // namespace gdalwrap
