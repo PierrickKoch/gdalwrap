@@ -194,11 +194,19 @@ void gdal::export8u(const std::string& filepath, int band,
     driver = GetGDALDriverManager()->GetDriverByName( driver_shortname.c_str() );
     if ( driver == NULL )
         throw std::runtime_error("[gdal] could not get the driver: " + driver_shortname);
-    driver->CreateCopy( tmpres.c_str(), dataset, 0, NULL, NULL, NULL );
+    GDALDataset *copy = driver->CreateCopy( tmpres.c_str(), dataset, 0, NULL,
+        NULL, NULL );
+
+    if ( copy != NULL )
+        GDALClose( (GDALDatasetH) copy );
 
     // close properly the dataset
     GDALClose( (GDALDatasetH) dataset );
     std::remove( tmptif.c_str() );
+    std::string srcaux = tmpres   + ".aux.xml";
+    // might want to check if srcaux exists
+    std::string dstaux = filepath + ".aux.xml";
+    std::rename( srcaux.c_str(), dstaux.c_str()   );
     std::rename( tmpres.c_str(), filepath.c_str() );
 }
 
