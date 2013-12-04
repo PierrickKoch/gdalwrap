@@ -141,13 +141,23 @@ public:
      * @param copy another gdal instance
      */
     void copy_meta(const gdal& copy) {
+        copy_meta(copy, copy.width, copy.height);
+    }
+
+    /** Copy meta-data from another instance with different width / height
+     *
+     * @param copy another gdal instance
+     * @param width
+     * @param height
+     */
+    void copy_meta(const gdal& copy, size_t width, size_t height) {
         utm_zone  = copy.utm_zone;
         utm_north = copy.utm_north;
         transform = copy.transform;
         custom_x_origin = copy.custom_x_origin;
         custom_y_origin = copy.custom_y_origin;
         names = copy.names;
-        set_size(copy.bands.size(), copy.width, copy.height);
+        set_size(copy.bands.size(), width, height);
     }
 
     /** Copy meta-data from another instance, except the number/name of layers
