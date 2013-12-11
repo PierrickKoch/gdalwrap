@@ -13,6 +13,7 @@
 #include <stdexcept>        // for runtime_error
 #include <gdal_priv.h>      // for GDALDataset
 #include <ogr_spatialref.h> // for OGRSpatialReference
+#include <cpl_string.h>     // for CSLSetNameValue
 
 #include "gdalwrap/gdal.hpp"
 
@@ -194,11 +195,17 @@ void gdal::export8u(const std::string& filepath, int band,
     driver = GetGDALDriverManager()->GetDriverByName( driver_shortname.c_str() );
     if ( driver == NULL )
         throw std::runtime_error("[gdal] could not get the driver: " + driver_shortname);
-    GDALDataset *copy = driver->CreateCopy( tmpres.c_str(), dataset, 0, NULL,
+
+    char ** options = NULL;
+    if (!driver_shortname.compare("JPEG"))
+        options = CSLSetNameValue( options, "QUALITY", "100" );
+
+    GDALDataset *copy = driver->CreateCopy( tmpres.c_str(), dataset, 0, options,
         NULL, NULL );
 
     if ( copy != NULL )
         GDALClose( (GDALDatasetH) copy );
+    CSLDestroy( options );
 
     // close properly the dataset
     GDALClose( (GDALDatasetH) dataset );
