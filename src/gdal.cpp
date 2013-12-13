@@ -198,7 +198,7 @@ void gdal::export8u(const std::string& filepath, int band,
 
     char ** options = NULL;
     if (!driver_shortname.compare("JPEG"))
-        options = CSLSetNameValue( options, "QUALITY", "100" );
+        options = CSLSetNameValue( options, "QUALITY", "95" );
 
     GDALDataset *copy = driver->CreateCopy( tmpres.c_str(), dataset, 0, options,
         NULL, NULL );
