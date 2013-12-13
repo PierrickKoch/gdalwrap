@@ -9,6 +9,7 @@
  */
 
 #include <string>
+#include <cstdlib>          // system
 #include <iostream>         // cout,cerr,endl
 #include <stdexcept>        // for runtime_error
 #include <gdal_priv.h>      // for GDALDataset
@@ -213,8 +214,8 @@ void gdal::export8u(const std::string& filepath, int band,
     std::string srcaux = tmpres   + ".aux.xml";
     // might want to check if srcaux exists
     std::string dstaux = filepath + ".aux.xml";
-    std::rename( srcaux.c_str(), dstaux.c_str()   );
-    std::rename( tmpres.c_str(), filepath.c_str() );
+    std::system( std::string("mv " + srcaux + " " + dstaux  ).c_str() );
+    std::system( std::string("mv " + tmpres + " " + filepath).c_str() );
 }
 
 } // namespace gdalwrap
