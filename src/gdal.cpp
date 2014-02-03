@@ -56,8 +56,9 @@ void gdal::save(const std::string& filepath) const {
 
     // see GDALDataset::GetGeoTransform()
     dataset->SetGeoTransform( (double *) transform.data() );
-    dataset->SetMetadataItem("CUSTOM_X_ORIGIN", std::to_string(custom_x_origin).c_str());
-    dataset->SetMetadataItem("CUSTOM_Y_ORIGIN", std::to_string(custom_y_origin).c_str());
+    // set dataset metadata
+    for (const auto& pair : metadata)
+        dataset->SetMetadataItem( pair.first.c_str(), pair.second.c_str() );
 
     GDALRasterBand *band;
     for (int band_id = 0; band_id < bands.size(); band_id++) {
@@ -99,12 +100,21 @@ void gdal::load(const std::string& filepath) {
     // and write {0.0, 1.0, 0.0, 0.0, 0.0, 1.0} in transform anyway
     // so error handling here is kind of useless...
     dataset->GetGeoTransform( transform.data() );
-    const char *cxo = dataset->GetMetadataItem("CUSTOM_X_ORIGIN");
-    const char *cyo = dataset->GetMetadataItem("CUSTOM_Y_ORIGIN");
-    if (cxo != NULL)
-        custom_x_origin = std::atof(cxo);
-    if (cyo != NULL)
-        custom_y_origin = std::atof(cyo);
+    // get dataset metadata
+    // The returned string list is owned by the object,
+    // and may change at any time. It is formated as a "Name=value" list
+    // with the last pointer value being NULL. Use the the CPL StringList
+    // functions such as CSLFetchNameValue() to manipulate it.
+    char **_metadata = dataset->GetMetadata();
+    for (int idx = 0; _metadata[idx] != NULL; idx++) {
+        std::string item = _metadata[idx];
+        // k,v = item.split('=')
+        metadata[ item.substr(0, item.find('=')) ] = item.substr(item.find('=') + 1);
+    }
+    custom_x_origin = std::stof( get(metadata, std::string("CUSTOM_X_ORIGIN"), std::string("0")) );
+    custom_y_origin = std::stof( get(metadata, std::string("CUSTOM_Y_ORIGIN"), std::string("0")) );
+    // custom_x_origin = std::atof( CSLFetchNameValueDef(_metadata, "CUSTOM_X_ORIGIN", "0") );
+    // custom_y_origin = std::atof( CSLFetchNameValueDef(_metadata, "CUSTOM_Y_ORIGIN", "0") );
 
     GDALRasterBand *band;
     const char *name;
@@ -178,8 +188,9 @@ void gdal::export8u(const std::string& filepath, int band,
 
     // see GDALDataset::GetGeoTransform()
     dataset->SetGeoTransform( (double *) transform.data() );
-    dataset->SetMetadataItem("CUSTOM_X_ORIGIN", std::to_string(custom_x_origin).c_str());
-    dataset->SetMetadataItem("CUSTOM_Y_ORIGIN", std::to_string(custom_y_origin).c_str());
+    // set dataset metadata
+    for (const auto& pair : metadata)
+        dataset->SetMetadataItem( pair.first.c_str(), pair.second.c_str() );
 
     // convert the band from float to byte
     std::vector<uint8_t> band8u = vfloat2vuchar( bands[band] );

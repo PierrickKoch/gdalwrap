@@ -10,6 +10,7 @@
 #ifndef GDAL_HPP
 #define GDAL_HPP
 
+#include <map>        // for metadata
 #include <string>     // for filepath
 #include <vector>     // for raster
 #include <array>      // for transform
@@ -40,8 +41,10 @@ class gdal {
 
 public:
     rasters bands;
-    // metadata (bands names)
+    // band names (band metadata)
     std::vector<std::string> names;
+    // dataset metadata (custom origin, and others)
+    std::map<std::string, std::string> metadata;
 
     gdal() {
         _init();
@@ -63,8 +66,8 @@ public:
         utm_zone = x.utm_zone;
         utm_north = x.utm_north;
         transform = x.transform;
-        custom_x_origin = x.custom_x_origin;
-        custom_y_origin = x.custom_y_origin;
+        metadata = x.metadata;
+        set_custom_origin(x.custom_x_origin, x.custom_y_origin);
         bands = x.bands;
         names = x.names;
     }
@@ -80,6 +83,8 @@ public:
     void set_custom_origin(double x, double y) {
         custom_x_origin = x;
         custom_y_origin = y;
+        metadata["CUSTOM_X_ORIGIN"] = std::to_string(custom_x_origin);
+        metadata["CUSTOM_Y_ORIGIN"] = std::to_string(custom_y_origin);
     }
 
     size_t index_pix(const point_xy_t& p) const {
@@ -154,8 +159,8 @@ public:
         utm_zone  = copy.utm_zone;
         utm_north = copy.utm_north;
         transform = copy.transform;
-        custom_x_origin = copy.custom_x_origin;
-        custom_y_origin = copy.custom_y_origin;
+        metadata  = copy.metadata;
+        set_custom_origin(copy.custom_x_origin, copy.custom_y_origin);
         names = copy.names;
         set_size(copy.bands.size(), width, height);
     }
@@ -169,8 +174,8 @@ public:
         utm_zone  = copy.utm_zone;
         utm_north = copy.utm_north;
         transform = copy.transform;
-        custom_x_origin = copy.custom_x_origin;
-        custom_y_origin = copy.custom_y_origin;
+        metadata  = copy.metadata;
+        set_custom_origin(copy.custom_x_origin, copy.custom_y_origin);
         set_size(n_raster, copy.width, copy.height);
     }
 
@@ -366,6 +371,17 @@ inline std::string toupper(const std::string& in) {
     std::string up(in);
     std::transform(up.begin(), up.end(), up.begin(), std::ptr_fun<int, int>(std::toupper));
     return up;
+}
+
+/**
+ * get value from a map with default if key does not exist
+ */
+template <class K, class V>
+inline V get(const std::map<K, V>& m, const K& k, const V& def) {
+    const auto& it = m.find(k);
+    if ( it == m.end() )
+        return def;
+    return it->second;
 }
 
 } // namespace gdalwrap
