@@ -158,8 +158,8 @@ void gdal::export8u(const std::string& filepath, int band,
     if ( driver == NULL )
         throw std::runtime_error("[gdal] could not get the driver");
 
-    std::string tmptif = std::tmpnam(nullptr);
-    std::string tmpres = std::tmpnam(nullptr);
+    std::string tmptif = filepath + ".tif";
+    std::string tmpres = filepath + ".tmp";
     // create the GDAL GeoTiff dataset (n layers of float32)
     GDALDataset *dataset = driver->Create( tmptif.c_str(), width, height,
         1, GDT_Byte, NULL );
@@ -212,10 +212,9 @@ void gdal::export8u(const std::string& filepath, int band,
     GDALClose( (GDALDatasetH) dataset );
     std::remove( tmptif.c_str() );
     std::string srcaux = tmpres   + ".aux.xml";
-    // might want to check if srcaux exists
     std::string dstaux = filepath + ".aux.xml";
-    std::system( std::string("mv " + srcaux + " " + dstaux  ).c_str() );
-    std::system( std::string("mv " + tmpres + " " + filepath).c_str() );
+    std::rename( srcaux.c_str(), dstaux.c_str()   );
+    std::rename( tmpres.c_str(), filepath.c_str() );
 }
 
 } // namespace gdalwrap
