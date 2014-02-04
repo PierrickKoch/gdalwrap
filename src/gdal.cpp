@@ -163,15 +163,19 @@ void gdal::export8u(const std::string& filepath, int band) const {
  */
 void gdal::export8u(const std::string& filepath, int band,
                     const std::string& driver_shortname) const {
-    // get the GDAL GeoTIFF driver
-    GDALDriver *driver = GetGDALDriverManager()->GetDriverByName("GTiff");
+    // get the driver from its shortname
+    GDALDriver *driver = GetGDALDriverManager()->GetDriverByName( driver_shortname.c_str() );
     if ( driver == NULL )
-        throw std::runtime_error("[gdal] could not get the driver");
+        throw std::runtime_error("[gdal] could not get the driver: " + driver_shortname);
+    // get the GDAL GeoTIFF driver
+    GDALDriver *drtiff = GetGDALDriverManager()->GetDriverByName("GTiff");
+    if ( drtiff == NULL )
+        throw std::runtime_error("[gdal] could not get the GTiff driver");
 
     std::string tmptif = filepath + ".tif";
     std::string tmpres = filepath + ".tmp";
     // create the GDAL GeoTiff dataset (n layers of float32)
-    GDALDataset *dataset = driver->Create( tmptif.c_str(), width, height,
+    GDALDataset *dataset = drtiff->Create( tmptif.c_str(), width, height,
         1, GDT_Byte, NULL );
     if ( dataset == NULL )
         throw std::runtime_error("[gdal] could not create dataset");
@@ -203,10 +207,6 @@ void gdal::export8u(const std::string& filepath, int band,
     auto minmax = std::minmax_element(bands[band].begin(), bands[band].end());
     raster_band->SetMetadataItem("INITIAL_MIN", std::to_string(*minmax.first).c_str());
     raster_band->SetMetadataItem("INITIAL_MAX", std::to_string(*minmax.second).c_str());
-
-    driver = GetGDALDriverManager()->GetDriverByName( driver_shortname.c_str() );
-    if ( driver == NULL )
-        throw std::runtime_error("[gdal] could not get the driver: " + driver_shortname);
 
     char ** options = NULL;
     if (!driver_shortname.compare("JPEG"))
