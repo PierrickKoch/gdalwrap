@@ -25,6 +25,17 @@ typedef std::vector<float>  raster;
 typedef std::vector<raster> rasters;
 typedef std::array<double, 2> point_xy_t;
 
+/**
+ * get value from a map with default if key does not exist
+ */
+template <class K, class V>
+inline const V& get(const std::map<K, V>& m, const K& k, const V& def) {
+    const auto& it = m.find(k);
+    if ( it == m.end() )
+        return def;
+    return it->second;
+}
+
 /*
  * gdal : GDALDataset wrapper
  */
@@ -61,13 +72,9 @@ public:
         bands.clear();
     }
     void copy_impl(const gdal& x) {
+        copy_meta_only(x);
         width = x.width;
         height = x.height;
-        utm_zone = x.utm_zone;
-        utm_north = x.utm_north;
-        transform = x.transform;
-        metadata = x.metadata;
-        set_custom_origin(x.custom_x_origin, x.custom_y_origin);
         bands = x.bands;
         names = x.names;
     }
@@ -148,6 +155,13 @@ public:
     void copy_meta(const gdal& copy) {
         copy_meta(copy, copy.width, copy.height);
     }
+    void copy_meta_only(const gdal& copy) {
+        utm_zone  = copy.utm_zone;
+        utm_north = copy.utm_north;
+        transform = copy.transform;
+        metadata  = copy.metadata;
+        set_custom_origin(copy.custom_x_origin, copy.custom_y_origin);
+    }
 
     /** Copy meta-data from another instance with different width / height
      *
@@ -156,11 +170,7 @@ public:
      * @param height
      */
     void copy_meta(const gdal& copy, size_t width, size_t height) {
-        utm_zone  = copy.utm_zone;
-        utm_north = copy.utm_north;
-        transform = copy.transform;
-        metadata  = copy.metadata;
-        set_custom_origin(copy.custom_x_origin, copy.custom_y_origin);
+        copy_meta_only(copy);
         names = copy.names;
         set_size(copy.bands.size(), width, height);
     }
@@ -171,11 +181,7 @@ public:
      * @param n_raster number of layers to set (number of rasters)
      */
     void copy_meta(const gdal& copy, size_t n_raster) {
-        utm_zone  = copy.utm_zone;
-        utm_north = copy.utm_north;
-        transform = copy.transform;
-        metadata  = copy.metadata;
-        set_custom_origin(copy.custom_x_origin, copy.custom_y_origin);
+        copy_meta_only(copy);
         set_size(n_raster, copy.width, copy.height);
     }
 
@@ -287,6 +293,10 @@ public:
         return bands[ get_band_id(name) ];
     }
 
+    const std::string& get_meta(const std::string& key, const std::string& def) const {
+        return get(metadata, key, def);
+    }
+
     /** Save as GeoTiff
      *
      * @param filepath path to .tif file.
@@ -335,6 +345,7 @@ inline bool operator==( const gdal& lhs, const gdal& rhs ) {
         and lhs.get_utm_pose_y() == rhs.get_utm_pose_y()
         and lhs.get_custom_x_origin() == rhs.get_custom_x_origin()
         and lhs.get_custom_y_origin() == rhs.get_custom_y_origin()
+        and lhs.metadata == rhs.metadata
         and lhs.names == rhs.names
         and lhs.bands == rhs.bands );
 }
@@ -371,17 +382,6 @@ inline std::string toupper(const std::string& in) {
     std::string up(in);
     std::transform(up.begin(), up.end(), up.begin(), std::ptr_fun<int, int>(std::toupper));
     return up;
-}
-
-/**
- * get value from a map with default if key does not exist
- */
-template <class K, class V>
-inline V get(const std::map<K, V>& m, const K& k, const V& def) {
-    const auto& it = m.find(k);
-    if ( it == m.end() )
-        return def;
-    return it->second;
 }
 
 } // namespace gdalwrap
