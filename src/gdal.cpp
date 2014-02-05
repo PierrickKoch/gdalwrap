@@ -173,8 +173,11 @@ void gdal::export8u(const std::string& filepath, int band,
     if ( drtiff == NULL )
         throw std::runtime_error("[gdal] could not get the GTiff driver");
 
-    std::string tmptif = filepath + ".tif";
-    std::string tmpres = filepath + ".tmp";
+    // could use something like tempnam(dirname(filepath), NULL)
+    // but it does not garantee the result to be local, if TMPDIR is set.
+    // and std::rename(2) works only locally, not across disks.
+    std::string tmptif = filepath + ".tif.export8u.tmp";
+    std::string tmpres = filepath +     ".export8u.tmp";
     // create the GDAL GeoTiff dataset (1 layers of byte)
     GDALDataset *dataset = drtiff->Create( tmptif.c_str(), width, height,
         1, GDT_Byte, NULL );
