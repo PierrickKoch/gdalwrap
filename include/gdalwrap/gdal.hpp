@@ -1,7 +1,7 @@
 /*
  * gdal.hpp
  *
- * Graph Library for Autonomous and Dynamic Systems
+ * C++11 GDAL wrapper
  *
  * author:  Pierrick Koch <pierrick.koch@laas.fr>
  * created: 2013-06-12
@@ -40,8 +40,10 @@ inline const V& get(const std::map<K, V>& m, const K& k, const V& def) {
     return it->second;
 }
 
-/*
- * gdal : GDALDataset wrapper
+/** GDALDataset wrapper
+ *
+ * This class offers I/O for GDAL Float32 GeoTiff with metadata support.
+ * It stores data using C++11 STL containers (std::{vector,map,array}).
  */
 class gdal {
     transform_t transform;
@@ -382,6 +384,9 @@ inline bytes_t raster2bytes(const raster& v) {
 
     return b;
 }
+/**
+ * @deprecated use raster2bytes instead
+ */
 inline bytes_t vfloat2vuchar(const raster& v) {
     return raster2bytes(v);
 }

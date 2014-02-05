@@ -1,7 +1,7 @@
 /*
  * gdal.cpp
  *
- * Graph Library for Autonomous and Dynamic Systems
+ * C++11 GDAL wrapper
  *
  * author:  Pierrick Koch <pierrick.koch@laas.fr>
  * created: 2013-09-22
