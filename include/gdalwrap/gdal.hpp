@@ -378,7 +378,7 @@ inline bytes_t raster2bytes(const raster& v) {
     float coef = 255.0 / diff;
     std::transform(v.begin(), v.end(), b.begin(),
         // C++11 lambda, capture local varibles by reference [&]
-        [&](float f) -> uint8_t { std::floor( coef * (f - min) ); });
+        [&](float f) -> uint8_t { return std::floor( coef * (f - min) ); });
 
     return b;
 }
