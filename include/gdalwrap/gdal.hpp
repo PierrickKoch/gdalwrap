@@ -24,6 +24,10 @@ namespace gdalwrap {
 typedef std::vector<float>  raster;
 typedef std::vector<raster> rasters;
 typedef std::array<double, 2> point_xy_t;
+typedef std::array<double, 6> transform_t;
+typedef std::vector<std::string> names_t;
+typedef std::vector<uint8_t> bytes_t;
+typedef std::map<std::string, std::string> metadata_t;
 
 /**
  * get value from a map with default if key does not exist
@@ -40,7 +44,7 @@ inline const V& get(const std::map<K, V>& m, const K& k, const V& def) {
  * gdal : GDALDataset wrapper
  */
 class gdal {
-    std::array<double, 6> transform;
+    transform_t transform;
     size_t width;   // size x
     size_t height;  // size y
     int  utm_zone;
@@ -53,9 +57,9 @@ class gdal {
 public:
     rasters bands;
     // band names (band metadata)
-    std::vector<std::string> names;
+    names_t names;
     // dataset metadata (custom origin, and others)
-    std::map<std::string, std::string> metadata;
+    metadata_t metadata;
 
     gdal() {
         _init();
@@ -362,20 +366,24 @@ inline std::ostream& operator<<(std::ostream& os, const gdal& value) {
  *   min(v) -> 0
  *   max(v) -> 255
  */
-inline std::vector<uint8_t> vfloat2vuchar(const std::vector<float>& v) {
+inline bytes_t raster2bytes(const raster& v) {
     auto minmax = std::minmax_element(v.begin(), v.end());
     float min = *minmax.first;
     float max = *minmax.second;
     float diff = max - min;
-    std::vector<unsigned char> retval(v.size());
+    bytes_t b(v.size());
     if (diff == 0) // max == min (useless band)
-        return retval;
+        return b;
 
     float coef = 255.0 / diff;
-    for (size_t idx = 0; idx < v.size(); idx++)
-        retval[idx] = std::floor( coef * (v[idx] - min) );
+    std::transform(v.begin(), v.end(), b.begin(),
+        // C++11 lambda, capture local varibles by reference [&]
+        [&](float f) -> uint8_t { std::floor( coef * (f - min) ); });
 
-    return retval;
+    return b;
+}
+inline bytes_t vfloat2vuchar(const raster& v) {
+    return raster2bytes(v);
 }
 
 inline std::string toupper(const std::string& in) {

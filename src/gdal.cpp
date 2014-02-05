@@ -9,7 +9,6 @@
  */
 
 #include <string>
-#include <cstdlib>          // system
 #include <iostream>         // cout,cerr,endl
 #include <stdexcept>        // for runtime_error
 #include <gdal_priv.h>      // for GDALDataset
@@ -19,6 +18,19 @@
 #include "gdalwrap/gdal.hpp"
 
 namespace gdalwrap {
+
+/** Set the WGS84 projection
+ */
+inline void set_wgs84(GDALDataset *dataset, int utm_zone, int utm_north) {
+    OGRSpatialReference spatial_reference;
+    char *projection = NULL;
+
+    spatial_reference.SetUTM( utm_zone, utm_north );
+    spatial_reference.SetWellKnownGeogCS( "WGS84" );
+    spatial_reference.exportToWkt( &projection );
+    dataset->SetProjection( projection );
+    CPLFree( projection );
+}
 
 void gdal::_init() {
     // Register all known configured GDAL drivers.
@@ -44,19 +56,10 @@ void gdal::save(const std::string& filepath) const {
     if ( dataset == NULL )
         throw std::runtime_error("[gdal] could not create (multi-layers float32)");
 
-    // set the projection
-    OGRSpatialReference spatial_reference;
-    char *projection = NULL;
-
-    spatial_reference.SetUTM( utm_zone, utm_north );
-    spatial_reference.SetWellKnownGeogCS( "WGS84" );
-    spatial_reference.exportToWkt( &projection );
-    dataset->SetProjection( projection );
-    CPLFree( projection );
-
+    set_wgs84(dataset, utm_zone, utm_north);
     // see GDALDataset::GetGeoTransform()
     dataset->SetGeoTransform( (double *) transform.data() );
-    // set dataset metadata
+    // Set dataset metadata
     for (const auto& pair : metadata)
         dataset->SetMetadataItem( pair.first.c_str(), pair.second.c_str() );
 
@@ -84,7 +87,7 @@ void gdal::load(const std::string& filepath) {
 
     std::string _type = GDALGetDriverShortName( dataset->GetDriver() );
     if ( _type.compare( "GTiff" ) != 0 )
-        std::cerr<<"[warn] expected GTiff and got: "<<_type<<std::endl;
+        std::cerr<<"[warn]["<< __func__ <<"] expected GTiff and got: "<<_type<<std::endl;
 
     set_size( dataset->GetRasterCount(), dataset->GetRasterXSize(),
         dataset->GetRasterYSize() );
@@ -100,28 +103,26 @@ void gdal::load(const std::string& filepath) {
     // and write {0.0, 1.0, 0.0, 0.0, 0.0, 1.0} in transform anyway
     // so error handling here is kind of useless...
     dataset->GetGeoTransform( transform.data() );
-    // get dataset metadata
-    // The returned string list is owned by the object,
+    // Parse dataset metadata
+    // GetMetadata returns a string list owned by the object,
     // and may change at any time. It is formated as a "Name=value" list
-    // with the last pointer value being NULL. Use the the CPL StringList
-    // functions such as CSLFetchNameValue() to manipulate it.
+    // with the last pointer value being NULL.
     char **_metadata = dataset->GetMetadata();
-    for (int idx = 0; _metadata[idx] != NULL; idx++) {
-        std::string item = _metadata[idx];
+    for (int meta_id = 0; _metadata[meta_id] != NULL; meta_id++) {
+        std::string item( _metadata[meta_id] );
+        std::string::size_type n = item.find('=');
         // k,v = item.split('=')
-        metadata[ item.substr(0, item.find('=')) ] = item.substr(item.find('=') + 1);
+        metadata[ item.substr(0, n) ] = item.substr(n + 1);
     }
-    custom_x_origin = std::stof( get(metadata, std::string("CUSTOM_X_ORIGIN"), std::string("0")) );
-    custom_y_origin = std::stof( get(metadata, std::string("CUSTOM_Y_ORIGIN"), std::string("0")) );
-    // custom_x_origin = std::atof( CSLFetchNameValueDef(_metadata, "CUSTOM_X_ORIGIN", "0") );
-    // custom_y_origin = std::atof( CSLFetchNameValueDef(_metadata, "CUSTOM_Y_ORIGIN", "0") );
+    custom_x_origin = std::stof( get_meta("CUSTOM_X_ORIGIN", "0") );
+    custom_y_origin = std::stof( get_meta("CUSTOM_Y_ORIGIN", "0") );
 
     GDALRasterBand *band;
     const char *name;
     for (int band_id = 0; band_id < bands.size(); band_id++) {
         band = dataset->GetRasterBand(band_id+1);
         if ( band->GetRasterDataType() != GDT_Float32 )
-            std::cerr<<"[warn] only support Float32 bands"<<std::endl;
+            std::cerr<<"[warn]["<< __func__ <<"] only support Float32 bands"<<std::endl;
         band->RasterIO( GF_Read, 0, 0, width, height,
             bands[band_id].data(), width, height, GDT_Float32, 0, 0 );
         name = band->GetMetadataItem("NAME");
@@ -174,22 +175,13 @@ void gdal::export8u(const std::string& filepath, int band,
 
     std::string tmptif = filepath + ".tif";
     std::string tmpres = filepath + ".tmp";
-    // create the GDAL GeoTiff dataset (n layers of float32)
+    // create the GDAL GeoTiff dataset (1 layers of byte)
     GDALDataset *dataset = drtiff->Create( tmptif.c_str(), width, height,
         1, GDT_Byte, NULL );
     if ( dataset == NULL )
         throw std::runtime_error("[gdal] could not create dataset");
 
-    // set the projection
-    OGRSpatialReference spatial_reference;
-    char *projection = NULL;
-
-    spatial_reference.SetUTM( utm_zone, utm_north );
-    spatial_reference.SetWellKnownGeogCS( "WGS84" );
-    spatial_reference.exportToWkt( &projection );
-    dataset->SetProjection( projection );
-    CPLFree( projection );
-
+    set_wgs84(dataset, utm_zone, utm_north);
     // see GDALDataset::GetGeoTransform()
     dataset->SetGeoTransform( (double *) transform.data() );
     // set dataset metadata
@@ -197,7 +189,7 @@ void gdal::export8u(const std::string& filepath, int band,
         dataset->SetMetadataItem( pair.first.c_str(), pair.second.c_str() );
 
     // convert the band from float to byte
-    std::vector<uint8_t> band8u = vfloat2vuchar( bands[band] );
+    bytes_t band8u ( raster2bytes( bands[band] ) );
 
     GDALRasterBand *raster_band = dataset->GetRasterBand(1);
     raster_band->RasterIO( GF_Write, 0, 0, width, height,
@@ -217,6 +209,8 @@ void gdal::export8u(const std::string& filepath, int band,
 
     if ( copy != NULL )
         GDALClose( (GDALDatasetH) copy );
+    else
+        std::cerr<<"[warn]["<< __func__ <<"] could not CreateCopy"<<std::endl;
     CSLDestroy( options );
 
     // close properly the dataset
