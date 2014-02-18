@@ -36,7 +36,7 @@ void gdal::_init() {
     // Register all known configured GDAL drivers.
     GDALAllRegister();
     set_transform(0, 0);
-    set_custom_origin(0, 0);
+    set_custom_origin(0, 0, 0);
     set_utm(0);
 }
 
@@ -116,6 +116,7 @@ void gdal::load(const std::string& filepath) {
     }
     custom_x_origin = std::stof( get_meta("CUSTOM_X_ORIGIN", "0") );
     custom_y_origin = std::stof( get_meta("CUSTOM_Y_ORIGIN", "0") );
+    custom_z_origin = std::stof( get_meta("CUSTOM_Z_ORIGIN", "0") );
 
     GDALRasterBand *band;
     const char *name;

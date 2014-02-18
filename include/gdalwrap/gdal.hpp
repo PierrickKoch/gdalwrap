@@ -53,6 +53,7 @@ class gdal {
     bool utm_north;
     double custom_x_origin; // in meters
     double custom_y_origin; // in meters
+    double custom_z_origin; // in meters
 
     void _init();
 
@@ -93,11 +94,13 @@ public:
      *
      * Store an UTM point in the meta-data.
      */
-    void set_custom_origin(double x, double y) {
+    void set_custom_origin(double x, double y, double z = 0.0) {
         custom_x_origin = x;
         custom_y_origin = y;
+        custom_z_origin = z;
         metadata["CUSTOM_X_ORIGIN"] = std::to_string(custom_x_origin);
         metadata["CUSTOM_Y_ORIGIN"] = std::to_string(custom_y_origin);
+        metadata["CUSTOM_Z_ORIGIN"] = std::to_string(custom_z_origin);
     }
 
     size_t index_pix(const point_xy_t& p) const {
@@ -166,7 +169,8 @@ public:
         utm_north = copy.utm_north;
         transform = copy.transform;
         metadata  = copy.metadata;
-        set_custom_origin(copy.custom_x_origin, copy.custom_y_origin);
+        set_custom_origin(copy.custom_x_origin, copy.custom_y_origin,
+            copy.custom_z_origin);
     }
 
     /** Copy meta-data from another instance with different width / height
@@ -274,6 +278,10 @@ public:
         return custom_y_origin;
     }
 
+    double get_custom_z_origin() const {
+        return custom_z_origin;
+    }
+
     /** Get a band ID by its name (metadata)
      *
      * @param name Name of the band ID to get.
@@ -351,6 +359,7 @@ inline bool operator==( const gdal& lhs, const gdal& rhs ) {
         and lhs.get_utm_pose_y() == rhs.get_utm_pose_y()
         and lhs.get_custom_x_origin() == rhs.get_custom_x_origin()
         and lhs.get_custom_y_origin() == rhs.get_custom_y_origin()
+        and lhs.get_custom_z_origin() == rhs.get_custom_z_origin()
         and lhs.metadata == rhs.metadata
         and lhs.names == rhs.names
         and lhs.bands == rhs.bands );
