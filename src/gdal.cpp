@@ -126,9 +126,6 @@ void gdal::load(const std::string& filepath) {
         // k,v = item.split('=')
         metadata[ item.substr(0, n) ] = item.substr(n + 1);
     }
-    custom_x_origin = std::stof( get_meta("CUSTOM_X_ORIGIN", "0") );
-    custom_y_origin = std::stof( get_meta("CUSTOM_Y_ORIGIN", "0") );
-    custom_z_origin = std::stof( get_meta("CUSTOM_Z_ORIGIN", "0") );
 
     GDALRasterBand *band;
     const char *name;
@@ -145,6 +142,11 @@ void gdal::load(const std::string& filepath) {
 
     // close properly the dataset
     GDALClose( (GDALDatasetH) dataset );
+
+    // WARN std::stod might throw std::invalid_argument
+    custom_x_origin = std::stod( get_meta("CUSTOM_X_ORIGIN", "0") );
+    custom_y_origin = std::stod( get_meta("CUSTOM_Y_ORIGIN", "0") );
+    custom_z_origin = std::stod( get_meta("CUSTOM_Z_ORIGIN", "0") );
 }
 
 /** Export a band as Byte
