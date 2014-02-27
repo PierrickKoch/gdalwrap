@@ -55,6 +55,7 @@ class gdal {
     double custom_y_origin; // in meters
     double custom_z_origin; // in meters
 
+    static size_t instance_count;
     void _init();
 
 public:
@@ -67,7 +68,10 @@ public:
     gdal() {
         _init();
     }
+    ~gdal();
+
     gdal(const gdal& x) {
+        instance_count++;
         copy_impl(x);
     }
     gdal& operator=(const gdal& x) {

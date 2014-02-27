@@ -19,6 +19,9 @@
 
 namespace gdalwrap {
 
+// static counter
+size_t gdal::instance_count = 0;
+
 /** Set the WGS84 projection
  */
 inline void set_wgs84(GDALDataset *dataset, int utm_zone, int utm_north) {
@@ -32,9 +35,18 @@ inline void set_wgs84(GDALDataset *dataset, int utm_zone, int utm_north) {
     CPLFree( projection );
 }
 
+gdal::~gdal() {
+    instance_count--;
+    // Destroy all known configured GDAL drivers.
+    if (!instance_count)
+        GDALDestroyDriverManager();
+}
+
 void gdal::_init() {
     // Register all known configured GDAL drivers.
-    GDALAllRegister();
+    if (!instance_count)
+        GDALAllRegister();
+    instance_count++;
     set_transform(0, 0);
     set_custom_origin(0, 0, 0);
     set_utm(0);
