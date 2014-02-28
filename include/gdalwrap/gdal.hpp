@@ -126,14 +126,14 @@ public:
     }
 
     point_xy_t point_pix2utm(double x, double y) const {
-        point_xy_t p = {x * get_scale_x() + get_utm_pose_x() ,
-                        y * get_scale_y() + get_utm_pose_y()};
+        point_xy_t p = {{x * get_scale_x() + get_utm_pose_x() ,
+                         y * get_scale_y() + get_utm_pose_y() }};
         return p;
     }
 
     point_xy_t point_utm2pix(double x, double y) const {
-        point_xy_t p = {(x - get_utm_pose_x()) / get_scale_x(),
-                        (y - get_utm_pose_y()) / get_scale_y()};
+        point_xy_t p = {{(x - get_utm_pose_x()) / get_scale_x() ,
+                         (y - get_utm_pose_y()) / get_scale_y() }};
         return p;
     }
 
@@ -145,19 +145,19 @@ public:
     }
 
     point_xy_t point_custom2pix(double x, double y) const {
-        return point_utm2pix( x + get_custom_x_origin(),
+        return point_utm2pix( x + get_custom_x_origin() ,
                               y + get_custom_y_origin() );
     }
 
     point_xy_t point_custom2utm(double x, double y) const {
-        point_xy_t p = {x + get_custom_x_origin() ,
-                        y + get_custom_y_origin() };
+        point_xy_t p = {{x + get_custom_x_origin() ,
+                         y + get_custom_y_origin() }};
         return p;
     }
 
     point_xy_t point_utm2custom(double x, double y) const {
-        point_xy_t p = {x - get_custom_x_origin() ,
-                        y - get_custom_y_origin() };
+        point_xy_t p = {{x - get_custom_x_origin() ,
+                         y - get_custom_y_origin() }};
         return p;
     }
 

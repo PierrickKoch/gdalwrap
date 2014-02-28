@@ -76,7 +76,7 @@ void gdal::save(const std::string& filepath) const {
         dataset->SetMetadataItem( pair.first.c_str(), pair.second.c_str() );
 
     GDALRasterBand *band;
-    for (int band_id = 0; band_id < bands.size(); band_id++) {
+    for (size_t band_id = 0; band_id < bands.size(); band_id++) {
         band = dataset->GetRasterBand(band_id+1);
         band->RasterIO( GF_Write, 0, 0, width, height,
             (void *) bands[band_id].data(), width, height, GDT_Float32, 0, 0 );
@@ -129,7 +129,7 @@ void gdal::load(const std::string& filepath) {
 
     GDALRasterBand *band;
     const char *name;
-    for (int band_id = 0; band_id < bands.size(); band_id++) {
+    for (size_t band_id = 0; band_id < bands.size(); band_id++) {
         band = dataset->GetRasterBand(band_id+1);
         if ( band->GetRasterDataType() != GDT_Float32 )
             std::cerr<<"[warn]["<< __func__ <<"] only support Float32 bands"<<std::endl;
