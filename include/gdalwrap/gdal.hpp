@@ -398,10 +398,19 @@ inline bytes_t raster2bytes(const raster& v) {
     return b;
 }
 /**
- * @deprecated use raster2bytes instead
+ * normalize [0, 1.0] in place
  */
-inline bytes_t vfloat2vuchar(const raster& v) {
-    return raster2bytes(v);
+inline raster normalize(raster& v) {
+    auto minmax = std::minmax_element(v.begin(), v.end());
+    float min = *minmax.first;
+    float max = *minmax.second;
+    float diff = max - min;
+    if (diff == 0) // max == min
+        return v;
+    // normalize in place
+    for (auto& f : v)
+        f = (f - min) / diff;
+    return v;
 }
 
 inline std::string toupper(const std::string& in) {
