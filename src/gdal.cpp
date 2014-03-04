@@ -62,9 +62,15 @@ void gdal::save(const std::string& filepath) const {
     if ( driver == NULL )
         throw std::runtime_error("[gdal] could not get the driver");
 
+    char ** options = NULL;
+    // fastest deflate (zlib/png)
+    options = CSLSetNameValue( options, "COMPRESS",     "DEFLATE" );
+    options = CSLSetNameValue( options, "PREDICTOR",    "1" );
+    options = CSLSetNameValue( options, "ZLEVEL",       "1" );
+
     // create the GDAL GeoTiff dataset (n layers of float32)
     GDALDataset *dataset = driver->Create( filepath.c_str(), width, height,
-        bands.size(), GDT_Float32, NULL );
+        bands.size(), GDT_Float32, options );
     if ( dataset == NULL )
         throw std::runtime_error("[gdal] could not create (multi-layers float32)");
 
@@ -85,6 +91,7 @@ void gdal::save(const std::string& filepath) const {
 
     // close properly the dataset
     GDALClose( (GDALDatasetH) dataset );
+    CSLDestroy( options );
 }
 
 /** Load a GeoTiff
