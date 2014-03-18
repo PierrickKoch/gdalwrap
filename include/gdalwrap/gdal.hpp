@@ -243,6 +243,15 @@ public:
         for (auto& band: bands)
             band.resize( size );
     }
+    /** Set meta size. Does not change the container (unsafe).
+     *
+     * @param x number of columns.
+     * @param y number of rows.
+     */
+    void set_size(size_t x, size_t y) {
+        width = x;
+        height = y;
+    }
 
     size_t get_width() const {
         return width;
