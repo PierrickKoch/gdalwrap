@@ -5,12 +5,16 @@ GDALWRAP
 
 * http://gdal.org
 * http://www.openrobots.org/wiki
+* http://trac.laas.fr/git/gdalwrap
 
 
 INSTALL
 -------
 
-    git clone https://github.com/pierriko/gdalwrap.git && cd gdalwrap
+First, install [`gdal`](https://github.com/OSGeo/gdal), then
+
+    # sudo apt-get install cmake libgdal1-dev
+    git clone http://trac.laas.fr/git/gdalwrap && cd gdalwrap
     mkdir build && cd build
     cmake -DCMAKE_INSTALL_PREFIX=$HOME/devel ..
     make -j8 && make install
