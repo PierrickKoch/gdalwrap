@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 set(PACKAGE_NAME gdalwrap)
-set(PACKAGE_VERSION "0.1.6")
+set(PACKAGE_VERSION "0.1.7")
 
 option(BUILD_TOOLS "Build tools" OFF)
 
