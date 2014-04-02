@@ -297,11 +297,10 @@ public:
      * @throws std::out_of_range if name not found.
      */
     size_t get_band_id(const std::string& name) const {
-        for (size_t idx = 0; idx < names.size(); idx++)
-            if (names[idx] == name)
-                return idx;
-
-        throw std::out_of_range("[gdal] band name not found: " + name);
+        const auto& it = std::find(names.begin(), names.end(), name);
+        if ( it == names.end() )
+            throw std::out_of_range("[gdal] band name not found: " + name);
+        return std::distance(names.begin(), it);
     }
 
     /** Get a band by its name (metadata)
