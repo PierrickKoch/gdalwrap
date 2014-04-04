@@ -115,11 +115,13 @@ void gdal::load(const std::string& filepath) {
     // and may change at any time. It is formated as a "Name=value" list
     // with the last pointer value being NULL.
     char **_metadata = dataset->GetMetadata();
-    for (int meta_id = 0; _metadata[meta_id] != NULL; meta_id++) {
-        std::string item( _metadata[meta_id] );
-        std::string::size_type n = item.find('=');
-        // k,v = item.split('=')
-        metadata[ item.substr(0, n) ] = item.substr(n + 1);
+    if(_metadata != NULL) {
+        for (int meta_id = 0; _metadata[meta_id] != NULL; meta_id++) {
+            std::string item( _metadata[meta_id] );
+            std::string::size_type n = item.find('=');
+            // k,v = item.split('=')
+            metadata[ item.substr(0, n) ] = item.substr(n + 1);
+        }
     }
 
     GDALRasterBand *band;
