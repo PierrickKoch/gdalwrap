@@ -24,11 +24,11 @@ include(InstallPkgConfigFile)
 # RPath management http://www.cmake.org/Wiki/CMake_RPATH_handling
 set(CMAKE_SKIP_BUILD_RPATH  FALSE)
 set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE) 
-set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}" isSystemDir)
+list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
 if("${isSystemDir}" STREQUAL "-1")
-	set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+	set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 endif("${isSystemDir}" STREQUAL "-1")
 
 # Library and binary
@@ -40,7 +40,7 @@ endif(BUILD_TOOLS)
 
 # Install headers
 file(GLOB gdalwrap_HDRS "include/gdalwrap/*.hpp")
-install(FILES ${gdalwrap_HDRS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/gdalwrap)
+install(FILES ${gdalwrap_HDRS} DESTINATION include/gdalwrap)
 
 #########################################################################
 ### Uninstall ###
