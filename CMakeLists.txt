@@ -15,9 +15,6 @@ find_package(GDAL REQUIRED)
 include_directories(include)
 include_directories(${GDAL_INCLUDE_DIRS})
 
-# Filesystem Hierarchy Standard
-include(GNUInstallDirs)
-
 # Load the 'install_pkg_config_file' macro
 include(InstallPkgConfigFile)
 
