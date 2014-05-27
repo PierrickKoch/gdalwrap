@@ -108,7 +108,7 @@ public:
     }
 
     size_t index_pix(size_t x, size_t y) const {
-        if ( x > width or y > height ) // size_t can not be < 0
+        if ( x >= width or y >= height ) // size_t can not be < 0
             return std::numeric_limits<size_t>::max();
         return x + y * width;
     }
