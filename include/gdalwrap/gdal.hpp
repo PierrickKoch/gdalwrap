@@ -51,16 +51,12 @@ class gdal {
     size_t height;  // size y
     int  utm_zone;
     bool utm_north;
-    double custom_x_origin; // in meters
-    double custom_y_origin; // in meters
-    double custom_z_origin; // in meters
 
+protected:
     void _init();
 
 public:
     rasters bands;
-    // band names (band metadata)
-    names_t names;
     // dataset metadata (custom origin, and others)
     metadata_t metadata;
 
@@ -83,24 +79,10 @@ public:
         width = x.width;
         height = x.height;
         bands = x.bands;
-        names = x.names;
     }
     gdal(const std::string& filepath) {
         _init();
         load(filepath);
-    }
-
-    /** Custom origin (UTM)
-     *
-     * Store an UTM point in the meta-data.
-     */
-    void set_custom_origin(double x, double y, double z = 0.0) {
-        custom_x_origin = x;
-        custom_y_origin = y;
-        custom_z_origin = z;
-        metadata["CUSTOM_X_ORIGIN"] = std::to_string(custom_x_origin);
-        metadata["CUSTOM_Y_ORIGIN"] = std::to_string(custom_y_origin);
-        metadata["CUSTOM_Z_ORIGIN"] = std::to_string(custom_z_origin);
     }
 
     size_t index_pix(const point_xy_t& p) const {
@@ -111,10 +93,6 @@ public:
         if ( x >= width or y >= height ) // size_t can not be < 0
             return std::numeric_limits<size_t>::max();
         return x + y * width;
-    }
-
-    size_t index_custom(double x, double y) const {
-        return index_pix(point_custom2pix(x,y));
     }
 
     size_t index_utm(double x, double y) const {
@@ -133,30 +111,6 @@ public:
         return p;
     }
 
-    point_xy_t point_pix2custom(double x, double y) const {
-        point_xy_t p = point_pix2utm(x, y);
-        p[0] -= get_custom_x_origin();
-        p[1] -= get_custom_y_origin();
-        return p;
-    }
-
-    point_xy_t point_custom2pix(double x, double y) const {
-        return point_utm2pix( x + get_custom_x_origin() ,
-                              y + get_custom_y_origin() );
-    }
-
-    point_xy_t point_custom2utm(double x, double y) const {
-        point_xy_t p = {{x + get_custom_x_origin() ,
-                         y + get_custom_y_origin() }};
-        return p;
-    }
-
-    point_xy_t point_utm2custom(double x, double y) const {
-        point_xy_t p = {{x - get_custom_x_origin() ,
-                         y - get_custom_y_origin() }};
-        return p;
-    }
-
     /** Copy meta-data from another instance
      *
      * @param copy another gdal instance
@@ -169,9 +123,12 @@ public:
         utm_north = copy.utm_north;
         transform = copy.transform;
         metadata  = copy.metadata;
-        set_custom_origin(copy.custom_x_origin, copy.custom_y_origin,
-            copy.custom_z_origin);
+        copy_other_meta(copy);
     }
+    /**
+     * to be impl by child-class
+     */
+    void copy_other_meta(const gdal& copy) {}
 
     /** Copy meta-data from another instance with different width / height
      *
@@ -181,7 +138,6 @@ public:
      */
     void copy_meta(const gdal& copy, size_t width, size_t height) {
         copy_meta_only(copy);
-        names = copy.names;
         set_size(copy.bands.size(), width, height);
     }
 
@@ -234,7 +190,6 @@ public:
         width = x;
         height = y;
         bands.resize( n );
-        names.resize( n );
         size_t size = x * y;
         for (auto& band: bands)
             band.resize( size );
@@ -279,42 +234,6 @@ public:
         return transform[3]; // upper left pixel position y
     }
 
-    double get_custom_x_origin() const {
-        return custom_x_origin;
-    }
-
-    double get_custom_y_origin() const {
-        return custom_y_origin;
-    }
-
-    double get_custom_z_origin() const {
-        return custom_z_origin;
-    }
-
-    /** Get a band ID by its name (metadata)
-     *
-     * @param name Name of the band ID to get.
-     * @throws std::out_of_range if name not found.
-     */
-    size_t get_band_id(const std::string& name) const {
-        const auto& it = std::find(names.begin(), names.end(), name);
-        if ( it == names.end() )
-            throw std::out_of_range("[gdal] band name not found: " + name);
-        return std::distance(names.begin(), it);
-    }
-
-    /** Get a band by its name (metadata)
-     *
-     * @param name Name of the band to get.
-     * @throws std::out_of_range if name not found.
-     */
-    raster& get_band(const std::string& name) {
-        return bands[ get_band_id(name) ];
-    }
-    const raster& get_band(const std::string& name) const {
-        return bands[ get_band_id(name) ];
-    }
-
     const std::string& get_meta(const std::string& key, const std::string& def) const {
         return get(metadata, key, def);
     }
@@ -356,6 +275,118 @@ public:
                   const std::string& driver_shortname) const;
 };
 
+
+class gdal_named : public gdal {
+public:
+    // band names (band metadata)
+    names_t names;
+
+    void copy_other_meta(const gdal_named& copy) {
+        gdal::copy_meta_only(copy);
+        names = copy.names;
+    }
+
+    void set_size(size_t n, size_t x, size_t y) {
+        gdal::set_size(n, x, y);
+        names.resize( n );
+    }
+
+    /** Get a band ID by its name (metadata)
+     *
+     * @param name Name of the band ID to get.
+     * @throws std::out_of_range if name not found.
+     */
+    size_t get_band_id(const std::string& name) const {
+        const auto& it = std::find(names.begin(), names.end(), name);
+        if ( it == names.end() )
+            throw std::out_of_range("[gdal] band name not found: " + name);
+        return std::distance(names.begin(), it);
+    }
+
+    /** Get a band by its name (metadata)
+     *
+     * @param name Name of the band to get.
+     * @throws std::out_of_range if name not found.
+     */
+    raster& get_band(const std::string& name) {
+        return bands[ get_band_id(name) ];
+    }
+    const raster& get_band(const std::string& name) const {
+        return bands[ get_band_id(name) ];
+    }
+};
+
+
+class gdal_custom : public gdal_named {
+    double custom_x_origin; // in meters
+    double custom_y_origin; // in meters
+    double custom_z_origin; // in meters
+
+    void _init() {
+        gdal_named::_init();
+        set_custom_origin(0, 0, 0);
+    }
+public:
+    /** Custom origin (UTM)
+     *
+     * Store an UTM point in the meta-data.
+     */
+    void set_custom_origin(double x, double y, double z = 0.0) {
+        custom_x_origin = x;
+        custom_y_origin = y;
+        custom_z_origin = z;
+        metadata["CUSTOM_X_ORIGIN"] = std::to_string(custom_x_origin);
+        metadata["CUSTOM_Y_ORIGIN"] = std::to_string(custom_y_origin);
+        metadata["CUSTOM_Z_ORIGIN"] = std::to_string(custom_z_origin);
+    }
+
+    void copy_other_meta(const gdal_custom& copy) {
+        gdal::copy_meta_only(copy);
+        set_custom_origin(copy.custom_x_origin, copy.custom_y_origin,
+            copy.custom_z_origin);
+    }
+
+    size_t index_custom(double x, double y) const {
+        return index_pix(point_custom2pix(x,y));
+    }
+
+    point_xy_t point_pix2custom(double x, double y) const {
+        point_xy_t p = point_pix2utm(x, y);
+        p[0] -= get_custom_x_origin();
+        p[1] -= get_custom_y_origin();
+        return p;
+    }
+
+    point_xy_t point_custom2pix(double x, double y) const {
+        return point_utm2pix( x + get_custom_x_origin() ,
+                              y + get_custom_y_origin() );
+    }
+
+    point_xy_t point_custom2utm(double x, double y) const {
+        point_xy_t p = {{x + get_custom_x_origin() ,
+                         y + get_custom_y_origin() }};
+        return p;
+    }
+
+    point_xy_t point_utm2custom(double x, double y) const {
+        point_xy_t p = {{x - get_custom_x_origin() ,
+                         y - get_custom_y_origin() }};
+        return p;
+    }
+
+    double get_custom_x_origin() const {
+        return custom_x_origin;
+    }
+
+    double get_custom_y_origin() const {
+        return custom_y_origin;
+    }
+
+    double get_custom_z_origin() const {
+        return custom_z_origin;
+    }
+};
+
 // helpers
 
 inline bool operator==( const gdal& lhs, const gdal& rhs ) {
@@ -365,11 +396,7 @@ inline bool operator==( const gdal& lhs, const gdal& rhs ) {
         and lhs.get_scale_y() == rhs.get_scale_y()
         and lhs.get_utm_pose_x() == rhs.get_utm_pose_x()
         and lhs.get_utm_pose_y() == rhs.get_utm_pose_y()
-        and lhs.get_custom_x_origin() == rhs.get_custom_x_origin()
-        and lhs.get_custom_y_origin() == rhs.get_custom_y_origin()
-        and lhs.get_custom_z_origin() == rhs.get_custom_z_origin()
         and lhs.metadata == rhs.metadata
-        and lhs.names == rhs.names
         and lhs.bands == rhs.bands );
 }
 inline std::ostream& operator<<(std::ostream& os, const gdal& value) {

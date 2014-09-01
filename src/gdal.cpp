@@ -36,7 +36,6 @@ void gdal::_init() {
     // Register all known configured GDAL drivers.
     GDALAllRegister();
     set_transform(0, 0);
-    set_custom_origin(0, 0, 0);
     set_utm(0);
 }
 
@@ -76,6 +75,7 @@ void gdal::save(const std::string& filepath, bool compress) const {
         band->RasterIO( GF_Write, 0, 0, width, height,
             (void *) bands[band_id].data(), width, height, GDT_Float32, 0, 0 );
         band->SetMetadataItem("NAME", names[band_id].c_str());
+        // band->SetNoDataValue(NO_DATA_VALUE);
     }
 
     // close properly the dataset
