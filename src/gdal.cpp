@@ -75,8 +75,8 @@ void gdal::save(const std::string& filepath, bool compress) const {
         band = dataset->GetRasterBand(band_id+1);
         band->RasterIO( GF_Write, 0, 0, width, height,
             (void *) bands[band_id].data(), width, height, GDT_Float32, 0, 0 );
-        band->SetMetadataItem("NAME", names[band_id].c_str());
-        // band->SetNoDataValue(NO_DATA_VALUE);
+        // XXX band->SetMetadataItem("NAME", names[band_id].c_str());
+        // XXX band->SetNoDataValue(NO_DATA_VALUE);
     }
 
     // close properly the dataset
@@ -135,17 +135,17 @@ void gdal::load(const std::string& filepath) {
         band->RasterIO( GF_Read, 0, 0, width, height,
             bands[band_id].data(), width, height, GDT_Float32, 0, 0 );
         name = band->GetMetadataItem("NAME");
-        if (name != NULL)
-            names[band_id] = name;
+        // XXX if (name != NULL)
+        // XXX     names[band_id] = name;
     }
 
     // close properly the dataset
     GDALClose( (GDALDatasetH) dataset );
 
     // WARN std::stod might throw std::invalid_argument
-    custom_x_origin = std::stod( get_meta("CUSTOM_X_ORIGIN", "0") );
-    custom_y_origin = std::stod( get_meta("CUSTOM_Y_ORIGIN", "0") );
-    custom_z_origin = std::stod( get_meta("CUSTOM_Z_ORIGIN", "0") );
+    // XXX custom_x_origin = std::stod( get_meta("CUSTOM_X_ORIGIN", "0") );
+    // XXX custom_y_origin = std::stod( get_meta("CUSTOM_Y_ORIGIN", "0") );
+    // XXX custom_z_origin = std::stod( get_meta("CUSTOM_Z_ORIGIN", "0") );
 }
 
 /** Export a band as Byte
