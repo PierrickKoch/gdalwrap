@@ -123,12 +123,7 @@ public:
         utm_north = copy.utm_north;
         transform = copy.transform;
         metadata  = copy.metadata;
-        copy_other_meta(copy);
     }
-    /**
-     * to be impl by child-class
-     */
-    void copy_other_meta(const gdal& copy) {}
 
     /** Copy meta-data from another instance with different width / height
      *
