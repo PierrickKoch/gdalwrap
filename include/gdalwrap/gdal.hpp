@@ -323,7 +323,7 @@ public:
      *
      * @param filepath path to .tif file.
      */
-    void save(const std::string& filepath) const;
+    void save(const std::string& filepath, bool compress = false) const;
 
     /** Load a GeoTiff
      *
@@ -426,4 +426,3 @@ inline std::string toupper(const std::string& in) {
 } // namespace gdalwrap
 
 #endif // GDAL_HPP
-

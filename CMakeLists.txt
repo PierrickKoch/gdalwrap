@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 2.8)
 
-set(PACKAGE_NAME gdalwrap)
+project(gdalwrap)
+set(PACKAGE_NAME ${CMAKE_PROJECT_NAME})
 set(PACKAGE_VERSION "0.1.8")
 
+option(BUILD_TESTS  "Build tests" ON)
 option(BUILD_TOOLS "Build tools" OFF)
 
 # C++11 for GCC 4.6
@@ -20,7 +22,7 @@ include(InstallPkgConfigFile)
 
 # RPath management http://www.cmake.org/Wiki/CMake_RPATH_handling
 set(CMAKE_SKIP_BUILD_RPATH  FALSE)
-set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE) 
+set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
@@ -34,6 +36,11 @@ add_subdirectory(src)
 if (BUILD_TOOLS)
     add_subdirectory(tools)
 endif(BUILD_TOOLS)
+
+if (BUILD_TESTS)
+  include( CTest )
+  add_subdirectory(test)
+endif(BUILD_TESTS)
 
 # Install headers
 file(GLOB gdalwrap_HDRS "include/gdalwrap/*.hpp")

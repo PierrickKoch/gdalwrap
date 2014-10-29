@@ -44,18 +44,19 @@ void gdal::_init() {
  *
  * @param filepath path to .tif file.
  */
-void gdal::save(const std::string& filepath) const {
+void gdal::save(const std::string& filepath, bool compress) const {
     // get the GDAL GeoTIFF driver
     GDALDriver *driver = GetGDALDriverManager()->GetDriverByName("GTiff");
     if ( driver == NULL )
         throw std::runtime_error("[gdal] could not get the driver");
 
     char ** options = NULL;
-    // fastest deflate (zlib/png)
-    options = CSLSetNameValue( options, "COMPRESS",     "DEFLATE" );
-    options = CSLSetNameValue( options, "PREDICTOR",    "1" );
-    options = CSLSetNameValue( options, "ZLEVEL",       "1" );
-
+    if (compress) {
+        // fastest deflate (zlib/png)
+        options = CSLSetNameValue( options, "COMPRESS",     "DEFLATE" );
+        options = CSLSetNameValue( options, "PREDICTOR",    "1" );
+        options = CSLSetNameValue( options, "ZLEVEL",       "1" );
+    }
     // create the GDAL GeoTiff dataset (n layers of float32)
     GDALDataset *dataset = driver->Create( filepath.c_str(), width, height,
         bands.size(), GDT_Float32, options );
