@@ -43,6 +43,7 @@ void gdal::_init() {
 /** Save as GeoTiff
  *
  * @param filepath path to .tif file.
+ * @param compress fastest deflate (zlib/png).
  */
 void gdal::save(const std::string& filepath, bool compress) const {
     // get the GDAL GeoTIFF driver
