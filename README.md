@@ -3,6 +3,9 @@ GDALWRAP
 
 *C++11 GDAL wrapper*
 
+[![Build Status](https://travis-ci.org/pierriko/gdalwrap.png?branch=master)]
+(https://travis-ci.org/pierriko/gdalwrap)
+
 * http://gdal.org
 * http://www.openrobots.org/wiki
 * http://trac.laas.fr/git/gdalwrap
