@@ -423,6 +423,8 @@ inline std::string toupper(const std::string& in) {
     return up;
 }
 
+gdal merge(const std::vector<gdal>& files);
+
 } // namespace gdalwrap
 
 #endif // GDAL_HPP
