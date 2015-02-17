@@ -150,7 +150,7 @@ void gdal::load(const std::string& filepath) {
 
 /** Export a band as Byte
  *
- * Distribute the height using `vfloat2vuchar` method.
+ * Distribute the height using `raster2bytes` method.
  * Guess the driver shortname.
  *
  * @param filepath path to .{jpg,gif,png} file.
@@ -162,26 +162,29 @@ void gdal::export8u(const std::string& filepath, int band) const {
     if (!ext.compare("JPG"))
         ext = "JPEG";
 
-    export8u(filepath, band, ext);
+    // convert the band from float to byte
+    export8u(filepath, raster2bytes(bands[band]), ext);
 }
 
 /** Export a band as Byte
  *
- * Distribute the height using `vfloat2vuchar` method.
  * First create a temporary GeoTiff file with the Byte band,
  * and then copy it to the `filepath` with the correct driver.
  * Because `Create` is not supported by all driver, but `CreateCopy` is.
  *
  * @param filepath path to .{jpg,gif,png} file.
- * @param band number [0,n-1].
+ * @param band8u the band to save, vector<uint8>.
  * @param driver_shortname see http://gdal.org/formats_list.html
  */
-void gdal::export8u(const std::string& filepath, int band,
+void gdal::export8u(const std::string& filepath, bytes_t band8u,
                     const std::string& driver_shortname) const {
     // get the driver from its shortname
-    GDALDriver *driver = GetGDALDriverManager()->GetDriverByName( driver_shortname.c_str() );
+    GDALDriver *driver = GetGDALDriverManager()->GetDriverByName(
+        driver_shortname.c_str() );
+
     if ( driver == NULL )
-        throw std::runtime_error("[gdal] could not get the driver: " + driver_shortname);
+        throw std::runtime_error("[gdal] could not get the driver: " +
+            driver_shortname);
     // get the GDAL GeoTIFF driver
     GDALDriver *drtiff = GetGDALDriverManager()->GetDriverByName("GTiff");
     if ( drtiff == NULL )
@@ -205,17 +208,9 @@ void gdal::export8u(const std::string& filepath, int band,
     for (const auto& pair : metadata)
         dataset->SetMetadataItem( pair.first.c_str(), pair.second.c_str() );
 
-    // convert the band from float to byte
-    bytes_t band8u ( raster2bytes( bands[band] ) );
-
     GDALRasterBand *raster_band = dataset->GetRasterBand(1);
     raster_band->RasterIO( GF_Write, 0, 0, width, height,
         (void *) band8u.data(), width, height, GDT_Byte, 0, 0 );
-    raster_band->SetMetadataItem("NAME", names[band].c_str());
-    // save initial min/max
-    auto minmax = std::minmax_element(bands[band].begin(), bands[band].end());
-    raster_band->SetMetadataItem("INITIAL_MIN", std::to_string(*minmax.first).c_str());
-    raster_band->SetMetadataItem("INITIAL_MAX", std::to_string(*minmax.second).c_str());
 
     char ** options = NULL;
     if (!driver_shortname.compare("JPEG"))

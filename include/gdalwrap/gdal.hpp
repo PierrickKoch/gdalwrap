@@ -333,7 +333,7 @@ public:
 
     /** Export a band as Byte
      *
-     * Distribute the height using `vfloat2vuchar` method.
+     * Distribute the height using `raster2bytes` method.
      * Guess the driver shortname.
      *
      * @param filepath path to .{jpg,gif,png} file.
@@ -343,16 +343,15 @@ public:
 
     /** Export a band as Byte
      *
-     * Distribute the height using `vfloat2vuchar` method.
      * First create a temporary GeoTiff file with the Byte band,
      * and then copy it to the `filepath` with the correct driver.
      * Because `Create` is not supported by all driver, but `CreateCopy` is.
      *
      * @param filepath path to .{jpg,gif,png} file.
-     * @param band number [0,n-1].
+     * @param band8u the band to save, vector<uint8>.
      * @param driver_shortname see http://gdal.org/formats_list.html
      */
-    void export8u(const std::string& filepath, int band,
+    void export8u(const std::string& filepath, bytes_t band8u,
                   const std::string& driver_shortname) const;
 };
 
