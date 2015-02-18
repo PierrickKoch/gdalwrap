@@ -20,7 +20,7 @@ bool same(double a, double b) {
     return std::abs(a - b) < std::numeric_limits<double>::epsilon();
 }
 
-gdalwrap::gdal merge(const std::vector<gdalwrap::gdal>& files) {
+gdalwrap::gdal merge(const std::vector<gdalwrap::gdal>& files, float no_data) {
     double scale_x, scale_y, utm_x, utm_y,
            min_utm_x, max_utm_x,
            min_utm_y, max_utm_y;
@@ -60,7 +60,7 @@ gdalwrap::gdal merge(const std::vector<gdalwrap::gdal>& files) {
     result.copy_meta_only(files[0]);
     result.names = files[0].names;
     result.set_transform(ulx, uly, scale_x, scale_y);
-    result.set_size(bsize, sx, sy);
+    result.set_size(bsize, sx, sy, no_data);
 
     for (const gdalwrap::gdal& file : files) {
         utm_x = file.get_utm_pose_x();

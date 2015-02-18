@@ -230,14 +230,14 @@ public:
      * @param x number of columns.
      * @param y number of rows.
      */
-    void set_size(size_t n, size_t x, size_t y) {
+    void set_size(size_t n, size_t x, size_t y, float no_data = 0) {
         width = x;
         height = y;
         bands.resize( n );
         names.resize( n );
         size_t size = x * y;
         for (auto& band: bands)
-            band.resize( size );
+            band.resize( size, no_data );
     }
     /** Set meta size. Does not change the container (unsafe).
      *
@@ -422,7 +422,7 @@ inline std::string toupper(const std::string& in) {
     return up;
 }
 
-gdal merge(const std::vector<gdal>& files);
+gdal merge(const std::vector<gdalwrap::gdal>& files, float no_data = 0);
 
 } // namespace gdalwrap
 
