@@ -351,7 +351,7 @@ public:
      * @param band8u the band to save, vector<uint8>.
      * @param driver_shortname see http://gdal.org/formats_list.html
      */
-    void export8u(const std::string& filepath, bytes_t band8u,
+    void export8u(const std::string& filepath, std::vector<bytes_t> band8u,
                   const std::string& driver_shortname) const;
 };
 

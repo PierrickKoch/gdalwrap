@@ -163,7 +163,7 @@ void gdal::export8u(const std::string& filepath, int band) const {
         ext = "JPEG";
 
     // convert the band from float to byte
-    export8u(filepath, raster2bytes(bands[band]), ext);
+    export8u(filepath, { raster2bytes(bands[band]) }, ext);
 }
 
 /** Export a band as Byte
@@ -176,7 +176,7 @@ void gdal::export8u(const std::string& filepath, int band) const {
  * @param band8u the band to save, vector<uint8>.
  * @param driver_shortname see http://gdal.org/formats_list.html
  */
-void gdal::export8u(const std::string& filepath, bytes_t band8u,
+void gdal::export8u(const std::string& filepath, std::vector<bytes_t> band8u,
                     const std::string& driver_shortname) const {
     // get the driver from its shortname
     GDALDriver *driver = GetGDALDriverManager()->GetDriverByName(
@@ -197,7 +197,7 @@ void gdal::export8u(const std::string& filepath, bytes_t band8u,
     std::string tmpres = filepath +     ".export8u.tmp";
     // create the GDAL GeoTiff dataset (1 layers of byte)
     GDALDataset *dataset = drtiff->Create( tmptif.c_str(), width, height,
-        1, GDT_Byte, NULL );
+        band8u.size(), GDT_Byte, NULL );
     if ( dataset == NULL )
         throw std::runtime_error("[gdal] could not create dataset");
 
@@ -208,9 +208,12 @@ void gdal::export8u(const std::string& filepath, bytes_t band8u,
     for (const auto& pair : metadata)
         dataset->SetMetadataItem( pair.first.c_str(), pair.second.c_str() );
 
-    GDALRasterBand *raster_band = dataset->GetRasterBand(1);
-    raster_band->RasterIO( GF_Write, 0, 0, width, height,
-        (void *) band8u.data(), width, height, GDT_Byte, 0, 0 );
+    GDALRasterBand *band;
+    for (size_t band_id = 0; band_id < band8u.size(); band_id++) {
+        band = dataset->GetRasterBand(band_id+1);
+        band->RasterIO( GF_Write, 0, 0, width, height,
+            (void *) band8u[band_id].data(), width, height, GDT_Byte, 0, 0 );
+    }
 
     char ** options = NULL;
     if (!driver_shortname.compare("JPEG"))
