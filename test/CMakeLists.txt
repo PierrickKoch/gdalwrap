@@ -7,3 +7,4 @@ macro(add_gdalwrap_test name)
 endmacro()
 
 add_gdalwrap_test( io_test )
+add_gdalwrap_test( type_test )
