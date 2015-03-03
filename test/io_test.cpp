@@ -9,7 +9,7 @@
 #include <cstdlib> // std::rand
 #include <gdalwrap/gdal.hpp>
 
-static const uint nloop = 1000;
+static const uint nloop = 100;
 static const uint nband = 8;
 static const uint nsx   = 400;
 static const uint nsy   = 400;
