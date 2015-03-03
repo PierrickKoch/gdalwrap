@@ -45,6 +45,7 @@ inline const V& get(const std::map<K, V>& m, const K& k, const V& def) {
  * This class offers I/O for GDAL Float32 GeoTiff with metadata support.
  * It stores data using C++11 STL containers (std::{vector,map,array}).
  */
+template <typename T>
 class gdal {
     transform_t transform;
     size_t width;   // size x
@@ -56,7 +57,7 @@ protected:
     void _init();
 
 public:
-    rasters bands;
+    std::vector<std::vector<T>> bands;
     // dataset metadata (custom origin, and others)
     metadata_t metadata;
 
