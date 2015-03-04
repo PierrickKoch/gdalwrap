@@ -21,9 +21,14 @@ namespace gdalwrap {
 
 template <typename T>
 GDALDataType data_type() { return GDT_Unknown; }
+// explicit (full) template specialization
 template <> GDALDataType data_type<float>() { return GDT_Float32; }
 template <> GDALDataType data_type<double>() { return GDT_Float64; }
+template <> GDALDataType data_type<int8_t>() { return GDT_Byte; }
 template <> GDALDataType data_type<uint8_t>() { return GDT_Byte; }
+template <> GDALDataType data_type<int16_t>() { return GDT_Int16; }
+template <> GDALDataType data_type<int32_t>() { return GDT_Int32; }
+template <> GDALDataType data_type<uint16_t>() { return GDT_UInt16; }
 template <> GDALDataType data_type<uint32_t>() { return GDT_UInt32; }
 
 /** Set the WGS84 projection
@@ -84,7 +89,7 @@ void gdal<T>::save(const std::string& filepath, bool compress) const {
     for (size_t band_id = 0; band_id < bands.size(); band_id++) {
         band = dataset->GetRasterBand(band_id+1);
         band->RasterIO( GF_Write, 0, 0, width, height,
-            (void *) bands[band_id].data(), width, height, GDT_Float32, 0, 0 );
+            (void *) bands[band_id].data(), width, height, data_type<T>(), 0, 0 );
         // XXX band->SetMetadataItem("NAME", names[band_id].c_str());
         // XXX band->SetNoDataValue(NO_DATA_VALUE);
     }
@@ -145,10 +150,10 @@ void gdal<T>::load(const std::string& filepath) {
     const char *name;
     for (size_t band_id = 0; band_id < bands.size(); band_id++) {
         band = dataset->GetRasterBand(band_id+1);
-        if ( band->GetRasterDataType() != GDT_Float32 )
-            std::cerr<<"[warn]["<< __func__ <<"] only support Float32 bands"<<std::endl;
+        if ( band->GetRasterDataType() != data_type<T>() )
+            std::cerr<<"[warn]["<< __func__ <<"] data_type"<<std::endl;
         band->RasterIO( GF_Read, 0, 0, width, height,
-            bands[band_id].data(), width, height, GDT_Float32, 0, 0 );
+            bands[band_id].data(), width, height, data_type<T>(), 0, 0 );
         name = band->GetMetadataItem("NAME");
         // XXX if (name != NULL)
         // XXX     names[band_id] = name;
