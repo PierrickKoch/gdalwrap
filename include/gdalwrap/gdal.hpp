@@ -414,7 +414,8 @@ inline std::ostream& operator<<(std::ostream& os, const gdal<T>& value) {
  *   min(v) -> 0
  *   max(v) -> 255
  */
-inline bytes_t raster2bytes(const raster& v) {
+template <typename T>
+inline bytes_t raster2bytes(const std::vector<T>& v) {
     auto minmax = std::minmax_element(v.begin(), v.end());
     float min = *minmax.first;
     float max = *minmax.second;
@@ -458,7 +459,9 @@ gdal<T> merge(const std::vector<gdal<T>>& files, T no_data = 0);
 typedef gdal<float> gdalf32;
 typedef gdal<uint8_t> gdalu8;
 typedef gdal<double> gdalf64;
-
+template class gdal<float>;
+template class gdal<uint8_t>;
+template class gdal<double>;
 } // namespace gdalwrap
 
 #endif // GDAL_HPP

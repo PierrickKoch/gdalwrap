@@ -83,6 +83,8 @@ void gdal<T>::save(const std::string& filepath, bool compress) const {
     CSLDestroy( options );
 }
 
+template void gdal<float>::save(const std::string&, bool) const;
+
 /** Load a GeoTiff
  *
  * @param filepath path to .tif file.
