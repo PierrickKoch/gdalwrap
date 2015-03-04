@@ -270,19 +270,19 @@ public:
                   const std::string& driver_shortname) const;
 };
 
-
-class gdal_named : public gdal {
+template<typename T>
+class gdal_named : public gdal<T> {
 public:
     // band names (band metadata)
     names_t names;
 
-    void copy_other_meta(const gdal_named& copy) {
-        gdal::copy_meta_only(copy);
+    void copy_meta_only(const gdal_named& copy) {
+        gdal<T>::copy_meta_only(copy);
         names = copy.names;
     }
 
     void set_size(size_t n, size_t x, size_t y) {
-        gdal::set_size(n, x, y);
+        gdal<T>::set_size(n, x, y);
         names.resize( n );
     }
 
@@ -304,21 +304,21 @@ public:
      * @throws std::out_of_range if name not found.
      */
     raster& get_band(const std::string& name) {
-        return bands[ get_band_id(name) ];
+        return this->bands[ get_band_id(name) ];
     }
     const raster& get_band(const std::string& name) const {
-        return bands[ get_band_id(name) ];
+        return this->bands[ get_band_id(name) ];
     }
 };
 
-
-class gdal_custom : public gdal_named {
+template<typename T>
+class gdal_custom : public gdal_named<T> {
     double custom_x_origin; // in meters
     double custom_y_origin; // in meters
     double custom_z_origin; // in meters
 
     void _init() {
-        gdal_named::_init();
+        gdal_named<T>::_init();
         set_custom_origin(0, 0, 0);
     }
 public:
@@ -330,13 +330,13 @@ public:
         custom_x_origin = x;
         custom_y_origin = y;
         custom_z_origin = z;
-        metadata["CUSTOM_X_ORIGIN"] = std::to_string(custom_x_origin);
-        metadata["CUSTOM_Y_ORIGIN"] = std::to_string(custom_y_origin);
-        metadata["CUSTOM_Z_ORIGIN"] = std::to_string(custom_z_origin);
+        this->metadata["CUSTOM_X_ORIGIN"] = std::to_string(custom_x_origin);
+        this->metadata["CUSTOM_Y_ORIGIN"] = std::to_string(custom_y_origin);
+        this->metadata["CUSTOM_Z_ORIGIN"] = std::to_string(custom_z_origin);
     }
 
-    void copy_other_meta(const gdal_custom& copy) {
-        gdal::copy_meta_only(copy);
+    void copy_meta_only(const gdal_custom& copy) {
+        gdal<T>::copy_meta_only(copy);
         set_custom_origin(copy.custom_x_origin, copy.custom_y_origin,
             copy.custom_z_origin);
     }
@@ -346,7 +346,7 @@ public:
     }
 
     point_xy_t point_pix2custom(double x, double y) const {
-        point_xy_t p = point_pix2utm(x, y);
+        point_xy_t p = gdal<T>::point_pix2utm(x, y);
         p[0] -= get_custom_x_origin();
         p[1] -= get_custom_y_origin();
         return p;
@@ -383,8 +383,8 @@ public:
 };
 
 // helpers
-
-inline bool operator==( const gdal& lhs, const gdal& rhs ) {
+template <typename T>
+inline bool operator==( const gdal<T>& lhs, const gdal<T>& rhs ) {
     return (lhs.get_width() == rhs.get_width()
         and lhs.get_height() == rhs.get_height()
         and lhs.get_scale_x() == rhs.get_scale_x()
@@ -394,7 +394,8 @@ inline bool operator==( const gdal& lhs, const gdal& rhs ) {
         and lhs.metadata == rhs.metadata
         and lhs.bands == rhs.bands );
 }
-inline std::ostream& operator<<(std::ostream& os, const gdal& value) {
+template <typename T>
+inline std::ostream& operator<<(std::ostream& os, const gdal<T>& value) {
     return os<<"GDAL["<<value.get_width()<<","<<value.get_height()<<"]";
 }
 
@@ -445,7 +446,8 @@ inline std::string toupper(const std::string& in) {
     return up;
 }
 
-gdal merge(const std::vector<gdalwrap::gdal>& files, float no_data = 0);
+template <typename T>
+gdal<T> merge(const std::vector<gdal<T>>& files, T no_data = 0);
 
 } // namespace gdalwrap
 

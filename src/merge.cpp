@@ -20,7 +20,8 @@ bool same(double a, double b) {
     return std::abs(a - b) < std::numeric_limits<double>::epsilon();
 }
 
-gdalwrap::gdal merge(const std::vector<gdalwrap::gdal>& files, float no_data) {
+template <typename T>
+gdal<T> merge(const std::vector<gdal<T>>& files, T no_data = 0);
     double scale_x, scale_y, utm_x, utm_y,
            min_utm_x, max_utm_x,
            min_utm_y, max_utm_y;
