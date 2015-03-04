@@ -19,6 +19,13 @@
 
 namespace gdalwrap {
 
+template <typename T>
+GDALDataType data_type() { return GDT_Unknown; }
+template <> GDALDataType data_type<float>() { return GDT_Float32; }
+template <> GDALDataType data_type<double>() { return GDT_Float64; }
+template <> GDALDataType data_type<uint8_t>() { return GDT_Byte; }
+template <> GDALDataType data_type<uint32_t>() { return GDT_UInt32; }
+
 /** Set the WGS84 projection
  */
 inline void set_wgs84(GDALDataset *dataset, int utm_zone, int utm_north) {
@@ -42,6 +49,10 @@ void _register() {
  * @param filepath path to .tif file.
  * @param compress fastest deflate (zlib/png).
  */
+template void gdal<float>::save(const std::string&, bool) const;
+template void gdal<double>::save(const std::string&, bool) const;
+template void gdal<uint8_t>::save(const std::string&, bool) const;
+template void gdal<uint32_t>::save(const std::string&, bool) const;
 template <typename T>
 void gdal<T>::save(const std::string& filepath, bool compress) const {
     // get the GDAL GeoTIFF driver
@@ -58,7 +69,7 @@ void gdal<T>::save(const std::string& filepath, bool compress) const {
     }
     // create the GDAL GeoTiff dataset (n layers of float32)
     GDALDataset *dataset = driver->Create( filepath.c_str(), width, height,
-        bands.size(), GDT_Float32, options );
+        bands.size(), data_type<T>(), options );
     if ( dataset == NULL )
         throw std::runtime_error("[gdal] could not create (multi-layers float32)");
 
@@ -83,12 +94,14 @@ void gdal<T>::save(const std::string& filepath, bool compress) const {
     CSLDestroy( options );
 }
 
-template void gdal<float>::save(const std::string&, bool) const;
-
 /** Load a GeoTiff
  *
  * @param filepath path to .tif file.
  */
+template void gdal<float>::load(const std::string&);
+template void gdal<double>::load(const std::string&);
+template void gdal<uint8_t>::load(const std::string&);
+template void gdal<uint32_t>::load(const std::string&);
 template <typename T>
 void gdal<T>::load(const std::string& filepath) {
     // Open a raster file as a GDALDataset.

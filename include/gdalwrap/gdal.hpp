@@ -456,12 +456,10 @@ inline std::string toupper(const std::string& in) {
 template <typename T>
 gdal<T> merge(const std::vector<gdal<T>>& files, T no_data = 0);
 
-typedef gdal<float> gdalf32;
-typedef gdal<uint8_t> gdalu8;
-typedef gdal<double> gdalf64;
 template class gdal<float>;
-template class gdal<uint8_t>;
 template class gdal<double>;
+template class gdal<uint8_t>;
+template class gdal<uint32_t>;
 } // namespace gdalwrap
 
 #endif // GDAL_HPP
