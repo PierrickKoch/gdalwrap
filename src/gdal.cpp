@@ -54,27 +54,24 @@ void _register() {
  * @param filepath path to .tif file.
  * @param compress fastest deflate (zlib/png).
  */
-template void gdal<float>::save(const std::string&, bool) const;
-template void gdal<double>::save(const std::string&, bool) const;
-template void gdal<uint8_t>::save(const std::string&, bool) const;
-template void gdal<uint32_t>::save(const std::string&, bool) const;
+template void gdal<float>::save(const std::string&, const options_t&) const;
+template void gdal<double>::save(const std::string&, const options_t&) const;
+template void gdal<uint8_t>::save(const std::string&, const options_t&) const;
+template void gdal<uint32_t>::save(const std::string&, const options_t&) const;
 template <typename T>
-void gdal<T>::save(const std::string& filepath, bool compress) const {
+void gdal<T>::save(const std::string& filepath, const options_t& options) const {
     // get the GDAL GeoTIFF driver
     GDALDriver *driver = GetGDALDriverManager()->GetDriverByName("GTiff");
     if ( driver == NULL )
         throw std::runtime_error("[gdal] could not get the driver");
 
-    char ** options = NULL;
-    if (compress) {
-        // fastest deflate (zlib/png)
-        options = CSLSetNameValue( options, "COMPRESS",     "DEFLATE" );
-        options = CSLSetNameValue( options, "PREDICTOR",    "1" );
-        options = CSLSetNameValue( options, "ZLEVEL",       "1" );
-    }
+    char ** c_opts = NULL;
+    for (const auto& pair : options)
+        c_opts = CSLSetNameValue(c_opts, pair.first.c_str(), pair.second.c_str());
+
     // create the GDAL GeoTiff dataset (n layers of float32)
     GDALDataset *dataset = driver->Create( filepath.c_str(), width, height,
-        bands.size(), data_type<T>(), options );
+        bands.size(), data_type<T>(), c_opts );
     if ( dataset == NULL )
         throw std::runtime_error("[gdal] could not create (multi-layers float32)");
 
@@ -90,13 +87,30 @@ void gdal<T>::save(const std::string& filepath, bool compress) const {
         band = dataset->GetRasterBand(band_id+1);
         band->RasterIO( GF_Write, 0, 0, width, height,
             (void *) bands[band_id].data(), width, height, data_type<T>(), 0, 0 );
-        // XXX band->SetMetadataItem("NAME", names[band_id].c_str());
+        for (const auto& pair : band_metadata[band_id])
+            band->SetMetadataItem( pair.first.c_str(), pair.second.c_str() );
         // XXX band->SetNoDataValue(NO_DATA_VALUE);
     }
 
     // close properly the dataset
     GDALClose( (GDALDatasetH) dataset );
     CSLDestroy( options );
+}
+
+inline void fill_metadata(char **c_metadata, metadata_t& metadata) {
+    if (!c_metadata)
+        return;
+    for (size_t meta_id = 0; c_metadata[meta_id] != NULL; meta_id++) {
+        std::string item( c_metadata[meta_id] );
+        std::string::size_type n = item.find('=');
+        // k,v = item.split('=')
+        metadata[ item.substr(0, n) ] = item.substr(n + 1);
+    }
+}
+inline metadata_t get_metadata(char **c_metadata) {
+    metadata_t metadata;
+    fill_metadata(c_metadata, metadata);
+    return metadata;
 }
 
 /** Load a GeoTiff
@@ -136,27 +150,16 @@ void gdal<T>::load(const std::string& filepath) {
     // GetMetadata returns a string list owned by the object,
     // and may change at any time. It is formated as a "Name=value" list
     // with the last pointer value being NULL.
-    char **_metadata = dataset->GetMetadata();
-    if(_metadata != NULL) {
-        for (int meta_id = 0; _metadata[meta_id] != NULL; meta_id++) {
-            std::string item( _metadata[meta_id] );
-            std::string::size_type n = item.find('=');
-            // k,v = item.split('=')
-            metadata[ item.substr(0, n) ] = item.substr(n + 1);
-        }
-    }
+    metadata = get_metadata(dataset->GetMetadata());
 
     GDALRasterBand *band;
-    const char *name;
     for (size_t band_id = 0; band_id < bands.size(); band_id++) {
         band = dataset->GetRasterBand(band_id+1);
         if ( band->GetRasterDataType() != data_type<T>() )
-            std::cerr<<"[warn]["<< __func__ <<"] data_type"<<std::endl;
+            std::cerr<<"[warn]["<< __func__ <<"] data type missmatch"<<std::endl;
         band->RasterIO( GF_Read, 0, 0, width, height,
             bands[band_id].data(), width, height, data_type<T>(), 0, 0 );
-        name = band->GetMetadataItem("NAME");
-        // XXX if (name != NULL)
-        // XXX     names[band_id] = name;
+        band_metadata[band_id] = get_metadata(band->GetMetadata());
     }
 
     // close properly the dataset

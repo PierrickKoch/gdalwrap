@@ -64,6 +64,7 @@ protected:
 
 public:
     std::vector<std::vector<T>> bands;
+    std::vector<metadata_t> band_metadata;
     // dataset metadata (custom origin, and others)
     metadata_t metadata;
 
@@ -86,6 +87,7 @@ public:
         width = x.width;
         height = x.height;
         bands = x.bands;
+        band_metadata = x.band_metadata;
     }
     gdal(const std::string& filepath) {
         _init();
@@ -188,10 +190,11 @@ public:
      * @param x number of columns.
      * @param y number of rows.
      */
-    void set_size(size_t n, size_t x, size_t y, float no_data = 0) {
+    void set_size(size_t n, size_t x, size_t y, T no_data = 0) {
         width = x;
         height = y;
         bands.resize( n );
+        band_metadata.resize( n );
         size_t size = x * y;
         for (auto& band: bands)
             band.resize( size, no_data );
@@ -417,17 +420,17 @@ inline std::ostream& operator<<(std::ostream& os, const gdal<T>& value) {
 template <typename T>
 inline bytes_t raster2bytes(const std::vector<T>& v) {
     auto minmax = std::minmax_element(v.begin(), v.end());
-    float min = *minmax.first;
-    float max = *minmax.second;
-    float diff = max - min;
+    T min = *minmax.first;
+    T max = *minmax.second;
+    T diff = max - min;
     bytes_t b(v.size());
     if (diff == 0) // max == min (useless band)
         return b;
 
-    float coef = 255.0 / diff;
+    T coef = 255.0 / diff;
     std::transform(v.begin(), v.end(), b.begin(),
         // C++11 lambda, capture local varibles by reference [&]
-        [&](float f) -> uint8_t { return std::floor( coef * (f - min) ); });
+        [&](T f) -> uint8_t { return std::floor( coef * (f - min) ); });
 
     return b;
 }
@@ -456,10 +459,6 @@ inline std::string toupper(const std::string& in) {
 template <typename T>
 gdal<T> merge(const std::vector<gdal<T>>& files, T no_data = 0);
 
-template class gdal<float>;
-template class gdal<double>;
-template class gdal<uint8_t>;
-template class gdal<uint32_t>;
 } // namespace gdalwrap
 
 #endif // GDAL_HPP
