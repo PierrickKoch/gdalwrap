@@ -19,7 +19,7 @@ std::ifstream::pos_type filesize(const std::string& filename) {
     return in.tellg();
 }
 
-void stats(const gdalwrap::gdal& geotif, bool compress) {
+void stats(const gdalwrap::gdalf32& geotif, bool compress) {
     std::chrono::time_point<std::chrono::system_clock> start, end;
     std::chrono::duration<double> elapsed_seconds;
     std::string name;
@@ -37,7 +37,7 @@ void stats(const gdalwrap::gdal& geotif, bool compress) {
     std::cout << "gdal::save filesize: " << size / nloop << " kB\n";
 }
 
-void randomize(gdalwrap::gdal& geotif, size_t band,
+void randomize(gdalwrap::gdalf32& geotif, size_t band,
         size_t width, size_t height, double scale = 1000.0) {
     scale /= RAND_MAX;
     for (size_t b = 0; b < band; b++) {
@@ -52,7 +52,7 @@ void randomize(gdalwrap::gdal& geotif, size_t band,
 int main(int argc, char * argv[]) {
     std::cout << "gdalwrap io test..." << std::endl;
 
-    gdalwrap::gdal geotif;
+    gdalwrap::gdalf32 geotif;
     geotif.set_size(nband, nsx, nsy);
 
     std::cout << "empty\n";

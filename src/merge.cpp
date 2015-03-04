@@ -21,7 +21,7 @@ bool same(double a, double b) {
 }
 
 template <typename T>
-gdal<T> merge(const std::vector<gdal<T>>& files, T no_data = 0);
+gdal<T> merge(const std::vector<gdal<T>>& files, T no_data = 0) {
     double scale_x, scale_y, utm_x, utm_y,
            min_utm_x, max_utm_x,
            min_utm_y, max_utm_y;
@@ -35,7 +35,7 @@ gdal<T> merge(const std::vector<gdal<T>>& files, T no_data = 0);
     min_utm_x = max_utm_x = files[0].get_utm_pose_x();
     min_utm_y = max_utm_y = files[0].get_utm_pose_y();
     // get min/max
-    for (const gdalwrap::gdal& file : files) {
+    for (const auto& file : files) {
         if (same(scale_x, file.get_scale_x()) and
             same(scale_y, file.get_scale_y()) and
             same(width, file.get_width()) and
@@ -57,13 +57,13 @@ gdal<T> merge(const std::vector<gdal<T>>& files, T no_data = 0);
            uly = max_utm_y, lry = min_utm_y + scale_y * height;
     size_t sx = std::floor((lrx - ulx) / scale_x + 0.5),
            sy = std::floor((lry - uly) / scale_y + 0.5);
-    gdalwrap::gdal result;
+    gdal<T> result;
     result.copy_meta_only(files[0]);
     result.names = files[0].names;
     result.set_transform(ulx, uly, scale_x, scale_y);
     result.set_size(bsize, sx, sy, no_data);
 
-    for (const gdalwrap::gdal& file : files) {
+    for (const auto& file : files) {
         utm_x = file.get_utm_pose_x();
         utm_y = file.get_utm_pose_y();
         int xoff = std::floor( (utm_x - ulx) / scale_x + 0.1 );

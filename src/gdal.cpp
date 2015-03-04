@@ -32,11 +32,9 @@ inline void set_wgs84(GDALDataset *dataset, int utm_zone, int utm_north) {
     CPLFree( projection );
 }
 
-void gdal::_init() {
+void _register() {
     // Register all known configured GDAL drivers.
     GDALAllRegister();
-    set_transform(0, 0);
-    set_utm(0);
 }
 
 /** Save as GeoTiff
@@ -44,7 +42,8 @@ void gdal::_init() {
  * @param filepath path to .tif file.
  * @param compress fastest deflate (zlib/png).
  */
-void gdal::save(const std::string& filepath, bool compress) const {
+template <typename T>
+void gdal<T>::save(const std::string& filepath, bool compress) const {
     // get the GDAL GeoTIFF driver
     GDALDriver *driver = GetGDALDriverManager()->GetDriverByName("GTiff");
     if ( driver == NULL )
@@ -88,7 +87,8 @@ void gdal::save(const std::string& filepath, bool compress) const {
  *
  * @param filepath path to .tif file.
  */
-void gdal::load(const std::string& filepath) {
+template <typename T>
+void gdal<T>::load(const std::string& filepath) {
     // Open a raster file as a GDALDataset.
     GDALDataset *dataset = (GDALDataset *) GDALOpen( filepath.c_str(), GA_ReadOnly );
     if ( dataset == NULL )
@@ -156,7 +156,8 @@ void gdal::load(const std::string& filepath) {
  * @param filepath path to .{jpg,gif,png} file.
  * @param band number [0,n-1].
  */
-void gdal::export8u(const std::string& filepath, int band) const {
+template <typename T>
+void gdal<T>::export8u(const std::string& filepath, int band) const {
     std::string ext = toupper( filepath.substr( filepath.rfind(".") + 1 ) );
 
     if (!ext.compare("JPG"))
@@ -176,8 +177,9 @@ void gdal::export8u(const std::string& filepath, int band) const {
  * @param band8u the band to save, vector<uint8>.
  * @param driver_shortname see http://gdal.org/formats_list.html
  */
-void gdal::export8u(const std::string& filepath, std::vector<bytes_t> band8u,
-                    const std::string& driver_shortname) const {
+template <typename T>
+void gdal<T>::export8u(const std::string& filepath, std::vector<bytes_t> band8u,
+                       const std::string& driver_shortname) const {
     // get the driver from its shortname
     GDALDriver *driver = GetGDALDriverManager()->GetDriverByName(
         driver_shortname.c_str() );

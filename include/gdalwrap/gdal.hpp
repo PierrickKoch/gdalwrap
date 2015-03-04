@@ -40,6 +40,8 @@ inline const V& get(const std::map<K, V>& m, const K& k, const V& def) {
     return it->second;
 }
 
+void _register();
+
 /** GDALDataset wrapper
  *
  * This class offers I/O for GDAL Float32 GeoTiff with metadata support.
@@ -54,7 +56,11 @@ class gdal {
     bool utm_north;
 
 protected:
-    void _init();
+    void _init() {
+        _register();
+        set_transform(0, 0);
+        set_utm(0);
+    }
 
 public:
     std::vector<std::vector<T>> bands;
@@ -277,12 +283,12 @@ public:
     names_t names;
 
     void copy_meta_only(const gdal_named& copy) {
-        gdal<T>::copy_meta_only(copy);
+        this->copy_meta_only(copy);
         names = copy.names;
     }
 
     void set_size(size_t n, size_t x, size_t y) {
-        gdal<T>::set_size(n, x, y);
+        this->set_size(n, x, y);
         names.resize( n );
     }
 
@@ -336,7 +342,7 @@ public:
     }
 
     void copy_meta_only(const gdal_custom& copy) {
-        gdal<T>::copy_meta_only(copy);
+        this->copy_meta_only(copy);
         set_custom_origin(copy.custom_x_origin, copy.custom_y_origin,
             copy.custom_z_origin);
     }
@@ -346,7 +352,7 @@ public:
     }
 
     point_xy_t point_pix2custom(double x, double y) const {
-        point_xy_t p = gdal<T>::point_pix2utm(x, y);
+        point_xy_t p = this->point_pix2utm(x, y);
         p[0] -= get_custom_x_origin();
         p[1] -= get_custom_y_origin();
         return p;
@@ -448,6 +454,10 @@ inline std::string toupper(const std::string& in) {
 
 template <typename T>
 gdal<T> merge(const std::vector<gdal<T>>& files, T no_data = 0);
+
+typedef gdal<float> gdalf32;
+typedef gdal<uint8_t> gdalu8;
+typedef gdal<double> gdalf64;
 
 } // namespace gdalwrap
 
