@@ -21,7 +21,7 @@ bool same(double a, double b) {
 }
 
 template <typename T>
-gdal<T> merge(const std::vector<gdal<T>>& files, T no_data = 0) {
+gdal_base<T> merge(const std::vector<gdal_base<T>>& files, T no_data = 0) {
     double scale_x, scale_y, utm_x, utm_y,
            min_utm_x, max_utm_x,
            min_utm_y, max_utm_y;
@@ -57,7 +57,7 @@ gdal<T> merge(const std::vector<gdal<T>>& files, T no_data = 0) {
            uly = max_utm_y, lry = min_utm_y + scale_y * height;
     size_t sx = std::floor((lrx - ulx) / scale_x + 0.5),
            sy = std::floor((lry - uly) / scale_y + 0.5);
-    gdal<T> result;
+    gdal_base<T> result;
     result.copy_meta_only(files[0]);
     result.names = files[0].names;
     result.set_transform(ulx, uly, scale_x, scale_y);

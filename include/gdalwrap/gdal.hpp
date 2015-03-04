@@ -28,6 +28,7 @@ typedef std::array<double, 6> transform_t;
 typedef std::vector<std::string> names_t;
 typedef std::vector<uint8_t> bytes_t;
 typedef std::map<std::string, std::string> metadata_t;
+typedef std::map<std::string, std::string> options_t;
 
 /**
  * get value from a map with default if key does not exist
@@ -48,7 +49,7 @@ void _register();
  * It stores data using C++11 STL containers (std::{vector,map,array}).
  */
 template <typename T>
-class gdal {
+class gdal_base {
     transform_t transform;
     size_t width;   // size x
     size_t height;  // size y
@@ -68,28 +69,28 @@ public:
     // dataset metadata (custom origin, and others)
     metadata_t metadata;
 
-    gdal() {
+    gdal_base() {
         _init();
     }
-    gdal(const gdal& x) {
+    gdal_base(const gdal_base& x) {
         copy_impl(x);
     }
-    gdal& operator=(const gdal& x) {
-        this->clear();
+    gdal_base& operator=(const gdal_base& x) {
+        clear();
         copy_impl(x);
         return *this;
     }
     void clear() {
         bands.clear();
     }
-    void copy_impl(const gdal& x) {
+    void copy_impl(const gdal_base& x) {
         copy_meta_only(x);
         width = x.width;
         height = x.height;
         bands = x.bands;
         band_metadata = x.band_metadata;
     }
-    gdal(const std::string& filepath) {
+    gdal_base(const std::string& filepath) {
         _init();
         load(filepath);
     }
@@ -124,10 +125,10 @@ public:
      *
      * @param copy another gdal instance
      */
-    void copy_meta(const gdal& copy) {
+    void copy_meta(const gdal_base& copy) {
         copy_meta(copy, copy.width, copy.height);
     }
-    void copy_meta_only(const gdal& copy) {
+    void copy_meta_only(const gdal_base& copy) {
         utm_zone  = copy.utm_zone;
         utm_north = copy.utm_north;
         transform = copy.transform;
@@ -140,7 +141,7 @@ public:
      * @param width
      * @param height
      */
-    void copy_meta(const gdal& copy, size_t width, size_t height) {
+    void copy_meta(const gdal_base& copy, size_t width, size_t height) {
         copy_meta_only(copy);
         set_size(copy.bands.size(), width, height);
     }
@@ -150,7 +151,7 @@ public:
      * @param copy another gdal instance
      * @param n_raster number of layers to set (number of rasters)
      */
-    void copy_meta(const gdal& copy, size_t n_raster) {
+    void copy_meta(const gdal_base& copy, size_t n_raster) {
         copy_meta_only(copy);
         set_size(n_raster, copy.width, copy.height);
     }
@@ -247,7 +248,9 @@ public:
      *
      * @param filepath path to .tif file.
      */
-    void save(const std::string& filepath, bool compress = false) const;
+    void save(const std::string& filepath,
+              const std::string& driver_shortname = "GTiff",
+              const options_t& opt = {}) const;
 
     /** Load a GeoTiff
      *
@@ -280,18 +283,18 @@ public:
 };
 
 template<typename T>
-class gdal_named : public gdal<T> {
+class gdal_named : public gdal_base<T> {
 public:
     // band names (band metadata)
     names_t names;
 
     void copy_meta_only(const gdal_named& copy) {
-        this->copy_meta_only(copy);
+        gdal_base<T>::copy_meta_only(copy);
         names = copy.names;
     }
 
     void set_size(size_t n, size_t x, size_t y) {
-        this->set_size(n, x, y);
+        gdal_base<T>::set_size(n, x, y);
         names.resize( n );
     }
 
@@ -345,13 +348,13 @@ public:
     }
 
     void copy_meta_only(const gdal_custom& copy) {
-        this->copy_meta_only(copy);
+        gdal_named<T>::copy_meta_only(copy);
         set_custom_origin(copy.custom_x_origin, copy.custom_y_origin,
             copy.custom_z_origin);
     }
 
     size_t index_custom(double x, double y) const {
-        return index_pix(point_custom2pix(x,y));
+        return this->index_pix(point_custom2pix(x,y));
     }
 
     point_xy_t point_pix2custom(double x, double y) const {
@@ -362,7 +365,7 @@ public:
     }
 
     point_xy_t point_custom2pix(double x, double y) const {
-        return point_utm2pix( x + get_custom_x_origin() ,
+        return this->point_utm2pix( x + get_custom_x_origin() ,
                               y + get_custom_y_origin() );
     }
 
@@ -393,7 +396,7 @@ public:
 
 // helpers
 template <typename T>
-inline bool operator==( const gdal<T>& lhs, const gdal<T>& rhs ) {
+inline bool operator==( const gdal_base<T>& lhs, const gdal_base<T>& rhs ) {
     return (lhs.get_width() == rhs.get_width()
         and lhs.get_height() == rhs.get_height()
         and lhs.get_scale_x() == rhs.get_scale_x()
@@ -404,7 +407,7 @@ inline bool operator==( const gdal<T>& lhs, const gdal<T>& rhs ) {
         and lhs.bands == rhs.bands );
 }
 template <typename T>
-inline std::ostream& operator<<(std::ostream& os, const gdal<T>& value) {
+inline std::ostream& operator<<(std::ostream& os, const gdal_base<T>& value) {
     return os<<"GDAL["<<value.get_width()<<","<<value.get_height()<<"]";
 }
 
@@ -457,7 +460,16 @@ inline std::string toupper(const std::string& in) {
 }
 
 template <typename T>
-gdal<T> merge(const std::vector<gdal<T>>& files, T no_data = 0);
+gdal_base<T> merge(const std::vector<gdal_base<T>>& files, T no_data = 0);
+
+template class gdal_custom<float>;
+typedef gdal_custom<float> gdal;
+
+static const options_t compress = {
+    {"COMPRESS", "DEFLATE"},
+    {"PREDICTOR", "1"},
+    {"ZLEVEL", "1"}
+};
 
 } // namespace gdalwrap
 

@@ -19,6 +19,8 @@
 
 namespace gdalwrap {
 
+using std::string;
+
 template <typename T>
 GDALDataType data_type() { return GDT_Unknown; }
 // explicit (full) template specialization
@@ -54,14 +56,17 @@ void _register() {
  * @param filepath path to .tif file.
  * @param compress fastest deflate (zlib/png).
  */
-template void gdal<float>::save(const std::string&, const options_t&) const;
-template void gdal<double>::save(const std::string&, const options_t&) const;
-template void gdal<uint8_t>::save(const std::string&, const options_t&) const;
-template void gdal<uint32_t>::save(const std::string&, const options_t&) const;
+template void gdal_base<float>::save(const string&, const string&, const options_t&) const;
+template void gdal_base<double>::save(const string&, const string&, const options_t&) const;
+template void gdal_base<uint8_t>::save(const string&, const string&, const options_t&) const;
+template void gdal_base<uint32_t>::save(const string&, const string&, const options_t&) const;
 template <typename T>
-void gdal<T>::save(const std::string& filepath, const options_t& options) const {
+void gdal_base<T>::save(const string& filepath,
+                   const string& driver_shortname,
+                   const options_t& options) const {
     // get the GDAL GeoTIFF driver
-    GDALDriver *driver = GetGDALDriverManager()->GetDriverByName("GTiff");
+    GDALDriver *driver = GetGDALDriverManager()->GetDriverByName(
+        driver_shortname.c_str() );
     if ( driver == NULL )
         throw std::runtime_error("[gdal] could not get the driver");
 
@@ -73,7 +78,7 @@ void gdal<T>::save(const std::string& filepath, const options_t& options) const 
     GDALDataset *dataset = driver->Create( filepath.c_str(), width, height,
         bands.size(), data_type<T>(), c_opts );
     if ( dataset == NULL )
-        throw std::runtime_error("[gdal] could not create (multi-layers float32)");
+        throw std::runtime_error("[gdal] could not create the dataset");
 
     set_wgs84(dataset, utm_zone, utm_north);
     // see GDALDataset::GetGeoTransform()
@@ -94,15 +99,15 @@ void gdal<T>::save(const std::string& filepath, const options_t& options) const 
 
     // close properly the dataset
     GDALClose( (GDALDatasetH) dataset );
-    CSLDestroy( options );
+    CSLDestroy( c_opts );
 }
 
 inline void fill_metadata(char **c_metadata, metadata_t& metadata) {
     if (!c_metadata)
         return;
     for (size_t meta_id = 0; c_metadata[meta_id] != NULL; meta_id++) {
-        std::string item( c_metadata[meta_id] );
-        std::string::size_type n = item.find('=');
+        string item( c_metadata[meta_id] );
+        string::size_type n = item.find('=');
         // k,v = item.split('=')
         metadata[ item.substr(0, n) ] = item.substr(n + 1);
     }
@@ -117,20 +122,16 @@ inline metadata_t get_metadata(char **c_metadata) {
  *
  * @param filepath path to .tif file.
  */
-template void gdal<float>::load(const std::string&);
-template void gdal<double>::load(const std::string&);
-template void gdal<uint8_t>::load(const std::string&);
-template void gdal<uint32_t>::load(const std::string&);
+template void gdal_base<float>::load(const string&);
+template void gdal_base<double>::load(const string&);
+template void gdal_base<uint8_t>::load(const string&);
+template void gdal_base<uint32_t>::load(const string&);
 template <typename T>
-void gdal<T>::load(const std::string& filepath) {
+void gdal_base<T>::load(const string& filepath) {
     // Open a raster file as a GDALDataset.
-    GDALDataset *dataset = (GDALDataset *) GDALOpen( filepath.c_str(), GA_ReadOnly );
+    GDALDataset *dataset = (GDALDataset *) GDALOpen(filepath.c_str(), GA_ReadOnly);
     if ( dataset == NULL )
-        throw std::runtime_error("[gdal] could not open the given file");
-
-    std::string _type = GDALGetDriverShortName( dataset->GetDriver() );
-    if ( _type.compare( "GTiff" ) != 0 )
-        std::cerr<<"[warn]["<< __func__ <<"] expected GTiff and got: "<<_type<<std::endl;
+        throw std::runtime_error("[gdal] could not open the given filepath");
 
     set_size( dataset->GetRasterCount(), dataset->GetRasterXSize(),
         dataset->GetRasterYSize() );
@@ -180,8 +181,8 @@ void gdal<T>::load(const std::string& filepath) {
  * @param band number [0,n-1].
  */
 template <typename T>
-void gdal<T>::export8u(const std::string& filepath, int band) const {
-    std::string ext = toupper( filepath.substr( filepath.rfind(".") + 1 ) );
+void gdal_base<T>::export8u(const string& filepath, int band) const {
+    string ext = toupper( filepath.substr( filepath.rfind(".") + 1 ) );
 
     if (!ext.compare("JPG"))
         ext = "JPEG";
@@ -201,8 +202,8 @@ void gdal<T>::export8u(const std::string& filepath, int band) const {
  * @param driver_shortname see http://gdal.org/formats_list.html
  */
 template <typename T>
-void gdal<T>::export8u(const std::string& filepath, std::vector<bytes_t> band8u,
-                       const std::string& driver_shortname) const {
+void gdal_base<T>::export8u(const string& filepath, std::vector<bytes_t> band8u,
+                       const string& driver_shortname) const {
     // get the driver from its shortname
     GDALDriver *driver = GetGDALDriverManager()->GetDriverByName(
         driver_shortname.c_str() );
@@ -218,8 +219,8 @@ void gdal<T>::export8u(const std::string& filepath, std::vector<bytes_t> band8u,
     // could use something like tempnam(dirname(filepath), NULL)
     // but it does not garantee the result to be local, if TMPDIR is set.
     // and std::rename(2) works only locally, not across disks.
-    std::string tmptif = filepath + ".tif.export8u.tmp";
-    std::string tmpres = filepath +     ".export8u.tmp";
+    string tmptif = filepath + ".tif.export8u.tmp";
+    string tmpres = filepath +     ".export8u.tmp";
     // create the GDAL GeoTiff dataset (1 layers of byte)
     GDALDataset *dataset = drtiff->Create( tmptif.c_str(), width, height,
         band8u.size(), GDT_Byte, NULL );
@@ -256,8 +257,8 @@ void gdal<T>::export8u(const std::string& filepath, std::vector<bytes_t> band8u,
     // close properly the dataset
     GDALClose( (GDALDatasetH) dataset );
     std::remove( tmptif.c_str() );
-    std::string srcaux = tmpres   + ".aux.xml";
-    std::string dstaux = filepath + ".aux.xml";
+    string srcaux = tmpres   + ".aux.xml";
+    string dstaux = filepath + ".aux.xml";
     std::rename( srcaux.c_str(), dstaux.c_str()   );
     std::rename( tmpres.c_str(), filepath.c_str() );
 }
