@@ -11,10 +11,11 @@
 #define GDAL_HPP
 
 #include <map>        // for metadata
-#include <string>     // for filepath
-#include <vector>     // for raster
 #include <array>      // for transform
 #include <cmath>      // std::abs
+#include <string>     // for filepath
+#include <vector>     // for raster
+#include <cassert>    // for assert
 #include <iostream>   // std::{cout,cerr,endl}
 #include <algorithm>  // std::minmax
 #include <stdexcept>  // std::runtime_error
@@ -244,13 +245,25 @@ public:
         return get(metadata, key, def);
     }
 
+    const std::string& get_band_meta(size_t band_id, const std::string& key, const std::string& def) const {
+        return get(band_metadata[band_id], key, def);
+    }
+
     /** Save as GeoTiff
      *
      * @param filepath path to .tif file.
      */
     void save(const std::string& filepath,
-              const std::string& driver_shortname = "GTiff",
-              const options_t& opt = {}) const;
+              const std::string& driver_shortname,
+              const options_t& opt) const;
+    void save(const std::string& filepath,
+              const std::string& driver_shortname) const {
+        return this->save(filepath, driver_shortname, {});
+    }
+    void save(const std::string& filepath) const {
+        return this->save(filepath, "GTiff", {});
+    }
+
 
     /** Load a GeoTiff
      *
@@ -287,6 +300,31 @@ class gdal_named : public gdal_base<T> {
 public:
     // band names (band metadata)
     names_t names;
+
+    void save(const std::string& filepath,
+              const std::string& driver_shortname,
+              const options_t& opt) const {
+        // name -> band_metadata
+        assert(names.size() == this->bands.size());
+        for (size_t band_id; band_id < names.size(); band_id++)
+            this->band_metadata[band_id].insert_or_assign("NAME", names[band_id]);
+        gdal_base<T>::save(filepath, driver_shortname, opt);
+    }
+    void save(const std::string& filepath,
+              const std::string& driver_shortname) const {
+        return this->save(filepath, driver_shortname, {});
+    }
+    void save(const std::string& filepath) const {
+        return this->save(filepath, "GTiff", {});
+    }
+
+    void load(const std::string& filepath) {
+        gdal_base<T>::load(filepath);
+        assert(names.size() == this->bands.size());
+        // band_metadata -> name
+        for (size_t band_id; band_id < names.size(); band_id++)
+            names[band_id] = this->get_band_meta(band_id, "NAME", "");
+    }
 
     void copy_meta_only(const gdal_named& copy) {
         gdal_base<T>::copy_meta_only(copy);
@@ -334,6 +372,15 @@ class gdal_custom : public gdal_named<T> {
         set_custom_origin(0, 0, 0);
     }
 public:
+
+    void load(const std::string& filepath) {
+        gdal_named<T>::load(filepath);
+        // WARN std::stod might throw std::invalid_argument
+        custom_x_origin = std::stod( this->get_meta("CUSTOM_X_ORIGIN", "0") );
+        custom_y_origin = std::stod( this->get_meta("CUSTOM_Y_ORIGIN", "0") );
+        custom_z_origin = std::stod( this->get_meta("CUSTOM_Z_ORIGIN", "0") );
+    }
+
     /** Custom origin (UTM)
      *
      * Store an UTM point in the meta-data.

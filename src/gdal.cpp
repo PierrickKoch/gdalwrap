@@ -165,11 +165,6 @@ void gdal_base<T>::load(const string& filepath) {
 
     // close properly the dataset
     GDALClose( (GDALDatasetH) dataset );
-
-    // WARN std::stod might throw std::invalid_argument
-    // XXX custom_x_origin = std::stod( get_meta("CUSTOM_X_ORIGIN", "0") );
-    // XXX custom_y_origin = std::stod( get_meta("CUSTOM_Y_ORIGIN", "0") );
-    // XXX custom_z_origin = std::stod( get_meta("CUSTOM_Z_ORIGIN", "0") );
 }
 
 /** Export a band as Byte
