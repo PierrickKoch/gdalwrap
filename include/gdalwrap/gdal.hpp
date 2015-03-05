@@ -71,29 +71,29 @@ public:
     metadata_t metadata;
 
     gdal_base() {
-        _init();
+        this->_init();
     }
     gdal_base(const gdal_base& x) {
-        copy_impl(x);
+        this->copy_impl(x);
+    }
+    gdal_base(const std::string& filepath) {
+        this->_init();
+        this->load(filepath);
     }
     gdal_base& operator=(const gdal_base& x) {
-        clear();
-        copy_impl(x);
+        this->clear();
+        this->copy_impl(x);
         return *this;
     }
     void clear() {
-        bands.clear();
+        this->bands.clear();
     }
     void copy_impl(const gdal_base& x) {
-        copy_meta_only(x);
-        width = x.width;
-        height = x.height;
-        bands = x.bands;
-        band_metadata = x.band_metadata;
-    }
-    gdal_base(const std::string& filepath) {
-        _init();
-        load(filepath);
+        this->copy_meta_only(x);
+        this->width = x.width;
+        this->height = x.height;
+        this->bands = x.bands;
+        this->band_metadata = x.band_metadata;
     }
 
     size_t index_pix(const point_xy_t& p) const {
@@ -298,42 +298,11 @@ public:
 template<typename T>
 class gdal_named : public gdal_base<T> {
 public:
-    // band names (band metadata)
-    names_t names;
-
-    void save(const std::string& filepath,
-              const std::string& driver_shortname,
-              const options_t& opt) const {
-        // name -> band_metadata
-        assert(names.size() == this->bands.size());
-        for (size_t band_id; band_id < names.size(); band_id++)
-            this->band_metadata[band_id].insert_or_assign("NAME", names[band_id]);
-        gdal_base<T>::save(filepath, driver_shortname, opt);
+    void set_band_name(size_t band_id, const std::string& name) {
+        this->band_metadata[band_id]["NAME"] = name;
     }
-    void save(const std::string& filepath,
-              const std::string& driver_shortname) const {
-        return this->save(filepath, driver_shortname, {});
-    }
-    void save(const std::string& filepath) const {
-        return this->save(filepath, "GTiff", {});
-    }
-
-    void load(const std::string& filepath) {
-        gdal_base<T>::load(filepath);
-        assert(names.size() == this->bands.size());
-        // band_metadata -> name
-        for (size_t band_id; band_id < names.size(); band_id++)
-            names[band_id] = this->get_band_meta(band_id, "NAME", "");
-    }
-
-    void copy_meta_only(const gdal_named& copy) {
-        gdal_base<T>::copy_meta_only(copy);
-        names = copy.names;
-    }
-
-    void set_size(size_t n, size_t x, size_t y) {
-        gdal_base<T>::set_size(n, x, y);
-        names.resize( n );
+    std::string get_band_name(size_t band_id) {
+        return this->band_metadata[band_id]["NAME"];
     }
 
     /** Get a band ID by its name (metadata)
@@ -342,10 +311,14 @@ public:
      * @throws std::out_of_range if name not found.
      */
     size_t get_band_id(const std::string& name) const {
-        const auto& it = std::find(names.begin(), names.end(), name);
-        if ( it == names.end() )
-            throw std::out_of_range("[gdal] band name not found: " + name);
-        return std::distance(names.begin(), it);
+        size_t band_id = 0;
+        for (const auto& bm : this->band_metadata) {
+            if (!name.compare(bm.second)) {
+                return band_id;
+            }
+            band_id++;
+        }
+        throw std::out_of_range("[gdal] band name not found: " + name);
     }
 
     /** Get a band by its name (metadata)
@@ -372,7 +345,13 @@ class gdal_custom : public gdal_named<T> {
         set_custom_origin(0, 0, 0);
     }
 public:
-
+    gdal_custom() {
+        this->_init();
+    }
+    gdal_custom(const std::string& filepath) {
+        this->_init();
+        this->load(filepath);
+    }
     void load(const std::string& filepath) {
         gdal_named<T>::load(filepath);
         // WARN std::stod might throw std::invalid_argument
