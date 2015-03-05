@@ -44,6 +44,42 @@ inline const V& get(const std::map<K, V>& m, const K& k, const V& def) {
 
 void _register();
 
+inline std::string toupper(const std::string& in) {
+    std::string up(in);
+    std::transform(up.begin(), up.end(), up.begin(), std::ptr_fun<int, int>(std::toupper));
+    return up;
+}
+
+/**
+ * works for JPEG, PNG, TIFF, GIF and others,
+ * see http://www.gdal.org/formats_list.html
+ */
+inline std::string driver_name(const std::string& filepath) {
+    std::string ext = toupper( filepath.substr( filepath.rfind(".") + 1 ) );
+    if (!ext.compare("JPG")) {
+        ext = "JPEG";
+    } else if (!ext.compare("TIF")) {
+        ext = "GTiff";
+    }
+    return ext;
+}
+
+inline void fill_metadata(char * const* c_metadata, metadata_t& metadata) {
+    if (!c_metadata)
+        return;
+    for (size_t meta_id = 0; c_metadata[meta_id] != NULL; meta_id++) {
+        std::string item( c_metadata[meta_id] );
+        std::string::size_type n = item.find('=');
+        // k,v = item.split('=')
+        metadata[ item.substr(0, n) ] = item.substr(n + 1);
+    }
+}
+inline metadata_t get_metadata(char * const* c_metadata) {
+    metadata_t metadata;
+    fill_metadata(c_metadata, metadata);
+    return metadata;
+}
+
 /** GDALDataset wrapper
  *
  * This class offers I/O for GDAL Float32 GeoTiff with metadata support.
@@ -279,7 +315,10 @@ public:
      * @param filepath path to .{jpg,gif,png} file.
      * @param band number [0,n-1].
      */
-    void export8u(const std::string& filepath, int band) const;
+    void export8u(const std::string& filepath, int band) const {
+        // convert the band from float to byte
+        export8u(filepath, { raster2bytes(bands[band]) }, driver_name(filepath));
+    }
 
     /** Export a band as Byte
      *
@@ -477,12 +516,6 @@ inline raster normalize(raster& v) {
     for (auto& f : v)
         f = (f - min) / diff;
     return v;
-}
-
-inline std::string toupper(const std::string& in) {
-    std::string up(in);
-    std::transform(up.begin(), up.end(), up.begin(), std::ptr_fun<int, int>(std::toupper));
-    return up;
 }
 
 template <typename T>

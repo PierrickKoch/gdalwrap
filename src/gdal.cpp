@@ -102,22 +102,6 @@ void gdal_base<T>::save(const string& filepath,
     CSLDestroy( c_opts );
 }
 
-inline void fill_metadata(char **c_metadata, metadata_t& metadata) {
-    if (!c_metadata)
-        return;
-    for (size_t meta_id = 0; c_metadata[meta_id] != NULL; meta_id++) {
-        string item( c_metadata[meta_id] );
-        string::size_type n = item.find('=');
-        // k,v = item.split('=')
-        metadata[ item.substr(0, n) ] = item.substr(n + 1);
-    }
-}
-inline metadata_t get_metadata(char **c_metadata) {
-    metadata_t metadata;
-    fill_metadata(c_metadata, metadata);
-    return metadata;
-}
-
 /** Load a GeoTiff
  *
  * @param filepath path to .tif file.
@@ -165,25 +149,6 @@ void gdal_base<T>::load(const string& filepath) {
 
     // close properly the dataset
     GDALClose( (GDALDatasetH) dataset );
-}
-
-/** Export a band as Byte
- *
- * Distribute the height using `raster2bytes` method.
- * Guess the driver shortname.
- *
- * @param filepath path to .{jpg,gif,png} file.
- * @param band number [0,n-1].
- */
-template <typename T>
-void gdal_base<T>::export8u(const string& filepath, int band) const {
-    string ext = toupper( filepath.substr( filepath.rfind(".") + 1 ) );
-
-    if (!ext.compare("JPG"))
-        ext = "JPEG";
-
-    // convert the band from float to byte
-    export8u(filepath, { raster2bytes(bands[band]) }, ext);
 }
 
 /** Export a band as Byte
