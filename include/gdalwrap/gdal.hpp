@@ -15,7 +15,7 @@
 #include <vector>     // for raster
 #include <array>      // for transform
 #include <cmath>      // std::abs
-#include <iostream>   // std::{cout,cerr,endl}
+#include <iostream>   // std::ostream
 #include <algorithm>  // std::minmax
 #include <stdexcept>  // std::runtime_error
 

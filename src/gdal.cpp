@@ -95,9 +95,10 @@ void gdal::load(const std::string& filepath) {
         throw std::runtime_error("[gdal] could not open the given file");
 
     std::string _type = GDALGetDriverShortName( dataset->GetDriver() );
+#ifndef NDEBUG
     if ( _type.compare( "GTiff" ) != 0 )
         std::cerr<<"[warn]["<< __func__ <<"] expected GTiff and got: "<<_type<<std::endl;
-
+#endif
     set_size( dataset->GetRasterCount(), dataset->GetRasterXSize(),
         dataset->GetRasterYSize() );
 
@@ -130,8 +131,10 @@ void gdal::load(const std::string& filepath) {
     const char *name;
     for (size_t band_id = 0; band_id < bands.size(); band_id++) {
         band = dataset->GetRasterBand(band_id+1);
+#ifndef NDEBUG
         if ( band->GetRasterDataType() != GDT_Float32 )
             std::cerr<<"[warn]["<< __func__ <<"] only support Float32 bands"<<std::endl;
+#endif
         band->RasterIO( GF_Read, 0, 0, width, height,
             bands[band_id].data(), width, height, GDT_Float32, 0, 0 );
         name = band->GetMetadataItem("NAME");
@@ -224,8 +227,10 @@ void gdal::export8u(const std::string& filepath, std::vector<bytes_t> band8u,
 
     if ( copy != NULL )
         GDALClose( (GDALDatasetH) copy );
+#ifndef NDEBUG
     else
         std::cerr<<"[warn]["<< __func__ <<"] could not CreateCopy"<<std::endl;
+#endif
     CSLDestroy( options );
 
     // close properly the dataset
