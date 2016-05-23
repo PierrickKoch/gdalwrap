@@ -68,6 +68,13 @@ int main(int argc, char * argv[]) {
     std::cout << "compress: on\n";
     stats(geotif, true);
 
+    randomize(geotif, nband, nsx, nsy/2);
+    std::cout << "50% random\n";
+    std::cout << "compress: off\n";
+    stats(geotif, false);
+    std::cout << "compress: on\n";
+    stats(geotif, true);
+
     randomize(geotif, nband, nsx, nsy);
     std::cout << "full\n";
     std::cout << "compress: off\n";
