@@ -55,7 +55,7 @@ void gdal::save(const std::string& filepath, bool compress) const {
     if (compress) {
         // fastest deflate (zlib/png)
         options = CSLSetNameValue( options, "COMPRESS",     "DEFLATE" );
-        options = CSLSetNameValue( options, "PREDICTOR",    "1" );
+        options = CSLSetNameValue( options, "PREDICTOR",    "3" );
         options = CSLSetNameValue( options, "ZLEVEL",       "1" );
     }
     // create the GDAL GeoTiff dataset (n layers of float32)
