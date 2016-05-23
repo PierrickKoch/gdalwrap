@@ -1,6 +1,6 @@
 #!/bin/sh
 
-NEW_VER=0.1.9
+NEW_VER=0.1.10
 
 PKGNAME=gdalwrap
 PKGTYPE=wip
